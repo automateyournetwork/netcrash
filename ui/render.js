@@ -314,10 +314,11 @@ function dial(id, label, action, zones, ticks, labels) {
 function dials(config) {
   const gq = (1 - config.boost.goodQuality) / 2; const lo = 0.5 - gq; const hi = 0.5 + gq;
   const span = config.physics.angleMaxDeg - config.physics.angleMinDeg;
-  const angleTicks = []; for (let d = 10; d <= 80; d += 10) angleTicks.push((d - config.physics.angleMinDeg) / span);
+  const a0 = config.physics.angleMinDeg; const a1 = config.physics.angleMaxDeg; const mid = Math.round((a0 + a1) / 2);
+  const angleTicks = []; for (let d = Math.ceil(a0 / 10) * 10; d <= a1; d += 10) angleTicks.push((d - a0) / span);
   return grp({ id: 'dials' },
     dial('power', 'POWER', 'lock', [[0, 0.5, '#3ea84f'], [0.5, 0.8, '#f2b134'], [0.8, 1, '#e5483f']], [0, 0.25, 0.5, 0.75, 1], [[0.04, 'LOW'], [0.96, 'HIGH']]),
-    dial('angle', 'ANGLE', 'lock', [[0, 1, '#9cc9f7']], angleTicks, [[0, `${config.physics.angleMinDeg}\u00B0`], [(45 - config.physics.angleMinDeg) / span, '45\u00B0'], [1, `${config.physics.angleMaxDeg}\u00B0`]]),
+    dial('angle', 'ANGLE', 'lock', [[0, 1, '#9cc9f7']], angleTicks, [[0, `${a0}\u00B0`], [(mid - a0) / span, `${mid}\u00B0`], [1, `${a1}\u00B0`]]),
     dial('boost', 'BOOST', 'boost', [[0, lo, '#e5483f'], [lo, hi, '#3ea84f'], [hi, 1, '#e5483f']], [0, lo, 0.5, hi, 1], [[0.5, 'BEST']]));
 }
 
@@ -502,9 +503,9 @@ function updateScene(v) {
   let emotion = 'neutral';
   if (v.mood === 'celebrate') emotion = 'happy';
   else if (v.mood === 'mourn') emotion = 'sad';
-  else if (now < vis.emoUntil) emotion = vis.emo;
   else if (v.phase === 'launching') emotion = 'worried';
   else if (v.phase === 'aim-power' || v.phase === 'aim-angle') emotion = 'neutral';
+  else if (now < vis.emoUntil) emotion = vis.emo;
   else if (glide) emotion = 'happy';
   else if (s.status === 'missed' || (s.status === 'paused' && s.grounded && s.misses > 0)) emotion = 'sad';
   else if (s.status === 'running' && !s.grounded && s.speedMps > 45) emotion = 'worried';

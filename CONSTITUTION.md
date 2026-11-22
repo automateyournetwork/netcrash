@@ -48,8 +48,8 @@ a question is open. Boost timing MAY change distance travelled, and boosts MAY b
 grading; an assist option MUST remove any timing barrier and its use MUST be recorded. Retries carry
 no penalty.
 
-Exception: when energy reaches zero the player gets exactly one final "last chance" question; a
-wrong answer there ends the run with no retry. This is the only place a wrong answer closes a
+Exception: whenever energy is zero and the character has stopped, the player gets a "last chance"
+question, every time; a wrong answer there ends the run with no retry. This is the only place a wrong answer closes a
 question. The
 UI MUST show completed rounds, attempts, and assistance separately; completion is not proof of
 independent mastery. The specification MUST state exactly what advances a round, finishes a level,
@@ -143,4 +143,4 @@ principles or materially expanded guidance, PATCH for clarifications and wording
 specs, plans, and reviews MUST verify compliance with Principles I–VII. Runtime guidance lives in
 the project README and `netcrash/` spec and plan documents.
 
-**Version**: 1.3.1 | **Ratified**: 2026-11-21 | **Last Amended**: 2026-11-23
+**Version**: 1.4.0 | **Ratified**: 2026-11-21 | **Last Amended**: 2026-11-23

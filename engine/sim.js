@@ -76,12 +76,12 @@ function velocity(n) { n.speedMps = Math.hypot(n.vx, n.vy); }
 
 // Catalyst 6500 impact: the chosen power (m/s) and angle (degrees) become the launch velocity, and
 // the hit sets the character tumbling forward.
-export function launch(s, powerMps, angleDeg, spinRadS = 0) {
+export function launch(s, powerMps, angleDeg, spinRadS = 0, liftM = 0) {
   const n = {
     ...s, vx: powerMps * Math.cos(angleDeg * DEG), vy: powerMps * Math.sin(angleDeg * DEG), w: -spinRadS,
     grounded: false, status: 'running', boostEvent: null, bounceEvent: null
   };
-  n.y = Math.max(s.y, 0) + 0.05;
+  n.y = Math.max(s.y, 0) + 0.05 + liftM; // the ram lifts the body off the road so a flat launch does not scrape it
   velocity(n);
   return n;
 }
@@ -237,6 +237,7 @@ export function step(s, input, config, dtMs = 50) {
     } else {
       const before = contactPoint(n, p); const lowPrev = n.y + before.lowRy;
       n.vy -= p.gravity * h; n.w *= 1 - p.spinDrag * h;
+      if (n.energy <= EPS) n.vx *= Math.max(0, 1 - p.dryDragPerS * h); // out of energy: no floating on, it comes down
       n.th = wrap(n.th + n.w * h); n.x += n.vx * h; n.y += n.vy * h;
       const cp = contactPoint(n, p); const low = n.y + cp.lowRy; const lowX = n.x + cp.lowRx;
       let hit = false;
@@ -250,6 +251,11 @@ export function step(s, input, config, dtMs = 50) {
             const sp = Math.hypot(n.vx, n.vy);
             if (sp > p.maxSpeedMps) { n.vx *= p.maxSpeedMps / sp; n.vy *= p.maxSpeedMps / sp; }
             n.y += dev.top - low;
+            // A better contact launches along a better angle: blend the direction toward the ideal pad angle, keep the speed.
+            if (n.vx > 0) {
+              const sp2 = Math.hypot(n.vx, n.vy); const ang = Math.atan2(n.vy, n.vx); const a2 = ang + (dv.padAngleDeg * DEG - ang) * Math.min(1, eta * dv.padAimBlend);
+              n.vx = sp2 * Math.cos(a2); n.vy = sp2 * Math.sin(a2);
+            }
             n.energy += dv.energy * (dv.energyMinFrac + (1 - dv.energyMinFrac) * eta);
             n.bounces += 1; n.lastDevice = dev.id; n.bounceEvent = 'device';
             n.bounceSeq += 1; n.lastBounce = { q: eta, kind: dev.kind, seq: n.bounceSeq };

@@ -21,7 +21,7 @@ test('gauge is a triangle wave: 0 at the start, 1 at half period, 0 again at the
   near(gaugeValue(0, 1500), 0); near(gaugeValue(750, 1500), 1); near(gaugeValue(1500, 1500), 0); near(gaugeValue(375, 1500), 0.5);
 });
 test('gauge values map to power (m/s) and angle (degrees) ranges', () => {
-  near(powerFromGauge(0, cfg), cfg.physics.powerMinMps); near(powerFromGauge(1, cfg), cfg.physics.powerMaxMps); near(angleFromGauge(0, cfg), 10); near(angleFromGauge(1, cfg), 80); near(angleFromGauge(0.5, cfg), 45);
+  near(powerFromGauge(0, cfg), cfg.physics.powerMinMps); near(powerFromGauge(1, cfg), cfg.physics.powerMaxMps); near(angleFromGauge(0, cfg), cfg.physics.angleMinDeg); near(angleFromGauge(1, cfg), cfg.physics.angleMaxDeg); near(angleFromGauge(0.5, cfg), 35);
 });
 test('boost quality is 1 at the dial center, 0 at the ends, and rises toward the center', () => {
   near(boostQuality(500, cfg), 1); near(boostQuality(0, cfg), 0); near(boostQuality(1000, cfg), 0); near(boostQuality(1500, cfg), 1);
@@ -65,9 +65,9 @@ test('energy drains per meter travelled and never goes below zero', () => {
   s = { ...launch(createSim(cfg), 50, 45), energy: 0.01 }; s = run(s, 5, {}, noDevices); assert.equal(s.energy, 0);
 });
 test('a flat landing on a device is a high-quality bounce; a tilted landing is a lower-quality one that adds spin', () => {
-  const flat = bounceOf(falling(0)); const tilt = bounceOf(falling(0.35));
+  const flat = bounceOf(falling(0)); const tilt = bounceOf(falling(-0.35));
   assert.equal(flat.bounceEvent, 'device'); assert.equal(tilt.bounceEvent, 'device');
-  assert.ok(flat.lastBounce.q > 0.9, `flat q ${flat.lastBounce.q}`); assert.ok(tilt.lastBounce.q < flat.lastBounce.q - 0.2, `tilt q ${tilt.lastBounce.q}`);
+  assert.ok(flat.lastBounce.q > 0.85, `flat q ${flat.lastBounce.q}`); assert.ok(tilt.lastBounce.q < flat.lastBounce.q - 0.2, `tilt q ${tilt.lastBounce.q}`);
   assert.ok(flat.vy > tilt.vy, 'a better bounce goes up faster'); assert.ok(Math.abs(tilt.w) > Math.abs(flat.w) + 0.05, 'a poorer bounce spins more');
   const e0 = falling(0).energy;
   assert.ok(flat.energy - e0 > tilt.energy - e0 + 5, 'a better bounce adds more energy');
@@ -126,7 +126,7 @@ test('a correct answer adds power-up energy; resume relaunches from the spot wit
   s = onCorrectAnswer(s, cfg); near(s.energy - e0, cfg.powerUpEnergy); assert.equal(s.answersCorrect, 1);
   s = resume(s, cfg);
   assert.equal(s.status, 'running'); near(s.x, 300); near(s.speedMps, cfg.relaunch.mps + cfg.relaunch.stepMps, 'relaunch speed', 1e-6); near(s.w, -cfg.relaunch.spinRadS, 'spin');
-  near(Math.atan2(s.vy, s.vx) * 180 / Math.PI, 55, 'angle', 1e-6);
+  near(Math.atan2(s.vy, s.vx) * 180 / Math.PI, cfg.relaunch.angleDeg, 'angle', 1e-6);
 });
 test('glide uses glide speed and glide drain, plus the super boost', () => {
   const s = startGlide(createSim(cfg), cfg);
@@ -202,6 +202,24 @@ test('boost pickups are deterministic, flying into one collects it (+1, capped),
   let u = { ...s, x: k.x - 20, y: k.y, vx: 30, vy: 0, grounded: false }; u = run(u, 3, {}, noDevices); assert.equal(u.pickupSeq, 1, 'not collected twice');
   const far = run({ ...launch(createSim(cfg), 40, 20), x: k.x - 20, y: k.y + 150, vx: 30, vy: 0 }, 3, {}, noDevices); assert.equal(far.pickupSeq, 0, 'missed by height');
 });
+test('out of energy: horizontal speed bleeds away so the character comes down instead of floating on', () => {
+  const air = { ...launch(createSim(cfg), 60, 35), y: 300, energy: 0 };
+  const t = run({ ...air }, 20, {}, noDevices);
+  assert.ok(t.vx < air.vx * 0.5, `vx ${t.vx} vs ${air.vx}`);
+  const fed = run({ ...air, energy: 500 }, 20, {}, noDevices); assert.ok(fed.vx > air.vx * 0.9, 'with energy there is no dry drag');
+});
+test('a better contact launches along a better angle: the exit direction moves toward the ideal pad angle, speed kept', () => {
+  const ideal = cfg.devices.padAngleDeg;
+  const ang = (s) => Math.atan2(s.vy, s.vx) * 180 / Math.PI;
+  const flat = bounceOf(falling(0, 30, -30)); const tilt = bounceOf(falling(-0.35, 30, -30));
+  assert.ok(Math.abs(ang(flat) - ideal) < Math.abs(ang(tilt) - ideal) + 1e-9, `flat ${ang(flat)} tilt ${ang(tilt)} ideal ${ideal}`);
+  assert.ok(ang(flat) < 55, 'a good bounce exits flat enough to chain devices');
+});
+test('the ram lifts the body off the road at launch so a flat shot does not scrape it', () => {
+  const a = launch(createSim(cfg), 60, 10, 2, 0); const b = launch(createSim(cfg), 60, 10, 2, cfg.launch.liftM);
+  near(b.y - a.y, cfg.launch.liftM);
+  assert.ok(run(b, 6, {}, noDevices).roadBounces === 0, 'no road contact during the first 0.3 s of a flat launch');
+});
 // ---- Balance (FR-026): drive the whole game with a scripted bot ----
 function lockAt(g, cfgx, power, angleDeg) {
   g.start();
@@ -233,9 +251,9 @@ test('balance: answering every question reaches the boss and a victory, whatever
     assert.equal(v.bossDefeated, true, JSON.stringify(o)); assert.equal(v.outcome, 'victory', JSON.stringify(o)); assert.equal(v.score, 7);
   }
 });
-test('balance: a harsher drain runs out of energy before the boss (out-of-energy stays possible)', () => {
+test('a harsh drain asks a last-chance question at EVERY zero-energy stop; answering them all correctly still reaches the boss', () => {
   const v = playBot({ drain: 1.5 });
-  assert.equal(v.outcome, 'out-of-energy'); assert.equal(v.bossDefeated, false);
+  assert.ok(v.lastChances >= 2, `last chances ${v.lastChances}`); assert.equal(v.outcome, 'victory'); assert.equal(v.bossDefeated, true);
 });
 test('balance runs are deterministic', () => {
   assert.deepEqual(playBot({ boosts: true }).sim, playBot({ boosts: true }).sim);

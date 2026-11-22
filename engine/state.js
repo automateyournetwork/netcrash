@@ -27,7 +27,7 @@ export function createGame(doc) {
       askedCount: 0, currentRoundId: null, lastChanceUsed: false, lastChance: false,
       bossDefeated: false, outcome: null, lastResult: null, assist: false, boostQueued: false,
       acc: 0, pendingNext: null, contentError: null, mood: null, moodSeq: 0,
-      gaugeMs: 0, lockedPower: null, lockedAngle: null, launchMs: 0, relaunch: false, launchSeq: 0, launchAtX: 0
+      gaugeMs: 0, lockedPower: null, lockedAngle: null, launchMs: 0, relaunch: false, launchSeq: 0, launchAtX: 0, lastChances: 0
     };
   }
   S = fresh();
@@ -52,10 +52,12 @@ export function createGame(doc) {
   function handleStatus() {
     const st = S.sim.status;
     if (st === 'missed') {
-      if (S.sim.energy <= 1e-9) {
-        if (!S.lastChanceUsed && S.askedCount < rounds.length) { S.lastChanceUsed = true; openQuestion(true); }
-        else finish('out-of-energy');
-      } else if (S.askedCount < rounds.length) openQuestion(false);
+      // A stop always asks a question. At zero energy it is a last chance, every time (FR-008).
+      if (S.askedCount < rounds.length) {
+        const dry = S.sim.energy <= 1e-9;
+        if (dry) { S.lastChanceUsed = true; S.lastChances += 1; }
+        openQuestion(dry);
+      } else if (S.sim.energy <= 1e-9) finish('out-of-energy');
       else S.sim = resume(S.sim, config);
     } else if (st === 'stopped') finish(S.sim.phase === 'glide' ? 'victory' : 'out-of-energy');
   }
@@ -113,7 +115,7 @@ export function createGame(doc) {
           const power = first ? powerFromGauge(S.lockedPower, config) : powerFromGauge(S.lockedPower, config) + config.relaunch.stepMps * S.sim.answersCorrect;
           const spin = first ? config.launch.spinRadS * S.lockedPower : config.relaunch.spinRadS;
           S.launchAtX = S.sim.x; S.launchSeq += 1;
-          S.sim = launch(first ? S.sim : { ...S.sim, status: 'paused', vx: 0, vy: 0, w: 0 }, power, S.lockedAngle, spin);
+          S.sim = launch(first ? S.sim : { ...S.sim, status: 'paused', vx: 0, vy: 0, w: 0 }, power, S.lockedAngle, spin, config.launch.liftM);
           S.prev = S.sim; S.phase = 'flying'; S.acc = 0; S.relaunch = false;
         }
         return api.view();
@@ -179,7 +181,7 @@ export function createGame(doc) {
         round, isBoss: Boolean(round && boss && round.id === boss.id),
         score: S.score, roundCount: rounds.length, completedRoundIds: S.completedRoundIds.slice(),
         attempts: totalAttempts(), assistance: { ...S.assistance }, assist: S.assist,
-        lastResult: S.lastResult, lastChance: S.lastChance, lastChanceUsed: S.lastChanceUsed,
+        lastResult: S.lastResult, lastChance: S.lastChance, lastChanceUsed: S.lastChanceUsed, lastChances: S.lastChances,
         bossDefeated: S.bossDefeated, outcome: S.outcome, contentError: S.contentError,
         mood: S.mood, moodSeq: S.moodSeq, askedCount: S.askedCount, warnings: validation.warnings,
         aim: {

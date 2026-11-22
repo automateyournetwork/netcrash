@@ -28,8 +28,8 @@ test('power gauge sweeps low-high-low and one lock picks the moving value, then 
   near(g.view().aim.power01, 1); g.lock();
   assert.equal(g.view().phase, 'aim-angle'); near(g.view().aim.powerMps, doc.config.physics.powerMaxMps);
   g.tick(425); // quarter of the 1700 ms period = half the angle range
-  near(g.view().aim.angleDeg, 45); g.lock();
-  assert.equal(g.view().phase, 'launching'); near(g.view().aim.angleDeg, 45);
+  near(g.view().aim.angleDeg, (doc.config.physics.angleMinDeg + doc.config.physics.angleMaxDeg) / 2); g.lock();
+  assert.equal(g.view().phase, 'launching'); near(g.view().aim.angleDeg, (doc.config.physics.angleMinDeg + doc.config.physics.angleMaxDeg) / 2);
 });
 function near(a, b) { assert.ok(Math.abs(a - b) < 1e-6, `${a} vs ${b}`); }
 test('timing matters: locking at different moments gives different power and angle', () => {
@@ -156,13 +156,25 @@ function playUntil(g, stopAt, { wrongLastChance = false } = {}) {
 }
 const harsh = () => { const d = clone(doc); d.config.drainPerMeter = 1.5; return d; };
 
-test('last chance: with zero energy the stop asks one final question; wrong ends the run, no retry', () => {
+test('last chance: with zero energy the stop asks a question; wrong ends the run, no retry', () => {
   const v = playUntil(createGame(harsh()), 'summary', { wrongLastChance: true });
   assert.equal(v.outcome, 'out-of-energy'); assert.equal(v.lastChanceUsed, true); assert.equal(v.bossDefeated, false);
 });
-test('last chance is once per run: a second zero-energy stop ends the run without a question', () => {
-  const v = playUntil(createGame(harsh()), 'summary');
-  assert.equal(v.outcome, 'out-of-energy'); assert.equal(v.lastChanceUsed, true); assert.ok(v.askedCount <= 7);
+test('every zero-energy stop asks a question: with correct answers the run keeps going through several last chances', () => {
+  const v = playUntil(createGame(harsh()), 'boss');
+  assert.equal(v.phase, 'boss'); assert.ok(v.lastChances >= 2, `last chances ${v.lastChances}`); assert.equal(v.score, 7);
+});
+test('a stop at zero energy is never silent: a question is open whenever the character has stopped with questions left', () => {
+  const g = createGame(harsh()); launched(g);
+  for (let i = 0; i < 400000; i++) {
+    const v = g.view();
+    if (v.phase === 'summary' || v.phase === 'boss') break;
+    if (v.phase === 'awaiting-answer' || v.phase === 'last-chance') g.submit(key[v.round.id]);
+    else if (v.phase === 'feedback') g.next();
+    else if (v.phase === 'aim-power') { g.tick(750 - v.aim.gaugeMs); g.lock(); } else if (v.phase === 'aim-angle') { g.tick(425 - v.aim.gaugeMs); g.lock(); }
+    else { g.tick(50); if (g.view().phase === 'flying') assert.ok(g.view().sim.status !== 'missed', 'a missed stop must have opened a question'); }
+  }
+  assert.ok(g.view().phase === 'boss', 'never ended without asking');
 });
 test('boss (Layer 8) appears right after Layer 7; wrong stays open without cost; correct leads to glide with no more questions', () => {
   const g = createGame(doc);

@@ -69,7 +69,8 @@ Only expose it on a network you trust: the server has no login.
 - **Boost** (the single Boost button above the dial in the scene, the dial, or the `B` key), only in the air and **limited to 3 at the start**. Collect more by flying into the gold lightning orbs along the way (max 6). The closer the needle is to BEST when you press, the bigger the boost, and a press inside the green zone launches you along the ideal angle at high speed; 1.2 s cooldown. **Assist** makes every press and both launch dials perfect and is recorded separately. Boost timing never affects points.
 - Energy drains with **distance only**, and everything pauses while a question is open (unlimited thinking time).
 - Wrong answers: no penalty, retry as often as you like; each wrong option has its own explanation.
-- If energy hits zero you get **one** last-chance question (the next layer, asked early). A wrong answer ends the run.
+- If you run out of energy and stop, you get a **last-chance** question **every time** (the next layer, asked early); a correct answer gives the power-up and you keep going, a wrong answer ends the run. Out of energy you lose horizontal speed quickly and come down.
+- Flight is flat and fast: the ideal launch angle is about 35 degrees, a good device bounce launches you forward along a good angle, and boosts push mostly forward.
 - **Joke alert:** speed is shown in network bit rates (Mbps, Gbps, Tbps) while distance is in meters.
   That mismatch is intentional humor and not a networking claim.
 - Reloading starts a fresh session; nothing is saved.
@@ -94,7 +95,7 @@ used only to run the tests. **No real browser run has been observed yet.**
 
 | Check | Status | Evidence / note |
 | --- | --- | --- |
-| Automated tests via `node tests/run-node.mjs` | **pass** | 77 / 77 passed, 0 failed (content, rules, rigid-body physics and contact quality, tail, boost quality, state, energy balance). The count dropped from 73 because the hint, worked-solution, briefing and layer-concept tests were removed with those features |
+| Automated tests via `node tests/run-node.mjs` | **pass** | 80 / 80 passed, 0 failed (content, rules, rigid-body physics and contact quality, tail, boost quality, state, energy balance). The count dropped from 73 because the hint, worked-solution, briefing and layer-concept tests were removed with those features |
 | Energy balance (FR-026) | **pass** | every correct-answering run reaches the boss, even with no boosts; more good boosts and Assist give more bounces and more distance; a harsher drain (0.7/m) runs out of energy before the boss. Tuned values: drain 0.2/m, bounce +40, power-up +30, speed 80 m/s (+6 per answer), hop 1.6 s |
 | UI smoke test via `node tests/ui-smoke.mjs` (fake DOM, full playthrough: briefing, power and angle gauges, Catalyst launch, flight, wrong/right answers, assist, boss, glide, summary, restart) | **pass** | checks for the scene: layers, readouts, unlabeled devices, devices on the road, scrolling, animation default on and the switch, boost streaks; it found and fixed one real bug (the text "null" would have appeared in the feedback box). It does not check layout, focus ring, CSS animation, or screen readers |
 | Frame rate (SC-009, FR-034, FR-050) | **runs fine on another PC (no numbers); not measured** | the owner reported on 2026-11-23 that the animation runs fine on another PC (the dev workstation is slow). No fps figures were recorded yet: use `?fps=1` and record average fps, worst frame, browser and machine here (T088). The lower-quality mode logic is unit tested (`createQualityMonitor`); its effect on a slow machine is unmeasured |
