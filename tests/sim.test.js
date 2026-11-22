@@ -21,7 +21,7 @@ test('gauge is a triangle wave: 0 at the start, 1 at half period, 0 again at the
   near(gaugeValue(0, 1500), 0); near(gaugeValue(750, 1500), 1); near(gaugeValue(1500, 1500), 0); near(gaugeValue(375, 1500), 0.5);
 });
 test('gauge values map to power (m/s) and angle (degrees) ranges', () => {
-  near(powerFromGauge(0, cfg), 28); near(powerFromGauge(1, cfg), 62); near(angleFromGauge(0, cfg), 10); near(angleFromGauge(1, cfg), 80); near(angleFromGauge(0.5, cfg), 45);
+  near(powerFromGauge(0, cfg), cfg.physics.powerMinMps); near(powerFromGauge(1, cfg), cfg.physics.powerMaxMps); near(angleFromGauge(0, cfg), 10); near(angleFromGauge(1, cfg), 80); near(angleFromGauge(0.5, cfg), 45);
 });
 test('boost quality is 1 at the dial center, 0 at the ends, and rises toward the center', () => {
   near(boostQuality(500, cfg), 1); near(boostQuality(0, cfg), 0); near(boostQuality(1000, cfg), 0); near(boostQuality(1500, cfg), 1);
@@ -43,10 +43,10 @@ test('launch gives the velocity vector and a forward tumble', () => {
 });
 test('gravity: vy falls by g per second and the apex matches y0 + vy^2 / 2g', () => {
   let s = launch(createSim(cfg), 60, 60); const vy0 = s.vy; const y0 = s.y;
-  s = run(s, 20, {}, noDevices); near(s.vy, vy0 - 12, 'vy after 1 s', 1e-6);
+  s = run(s, 20, {}, noDevices); near(s.vy, vy0 - cfg.physics.gravity, 'vy after 1 s', 1e-6);
   let top = 0; s = launch(createSim(cfg), 60, 60);
   for (let i = 0; i < 100 && s.status === 'running'; i++) { s = step(s, {}, noDevices, 50); top = Math.max(top, s.y); }
-  near(top, y0 + (vy0 * vy0) / 24, 'apex', 1);
+  near(top, y0 + (vy0 * vy0) / (2 * cfg.physics.gravity), 'apex', 1);
 });
 test('a steeper angle goes higher, more power goes farther', () => {
   const peak = (pw, a) => { let s = launch(createSim(cfg), pw, a); let t = 0; for (let i = 0; i < 300 && !s.grounded && s.roadBounces === 0; i++) { s = step(s, {}, noDevices, 50); t = Math.max(t, s.y); } return t; };
@@ -123,9 +123,9 @@ test('a correct answer adds power-up energy; resume relaunches from the spot wit
   let s = { ...launch(createSim(cfg), 30, 45), x: 300, y: B, vx: 0, vy: 0, grounded: true, status: 'missed' };
   const e0 = s.energy;
   s = ackQuestion(s); assert.equal(s.status, 'paused'); assert.equal(step(s, {}, cfg, 50), s);
-  s = onCorrectAnswer(s, cfg); near(s.energy - e0, 30); assert.equal(s.answersCorrect, 1);
+  s = onCorrectAnswer(s, cfg); near(s.energy - e0, cfg.powerUpEnergy); assert.equal(s.answersCorrect, 1);
   s = resume(s, cfg);
-  assert.equal(s.status, 'running'); near(s.x, 300); near(s.speedMps, 49, 'relaunch speed', 1e-6); near(s.w, -cfg.relaunch.spinRadS, 'spin');
+  assert.equal(s.status, 'running'); near(s.x, 300); near(s.speedMps, cfg.relaunch.mps + cfg.relaunch.stepMps, 'relaunch speed', 1e-6); near(s.w, -cfg.relaunch.spinRadS, 'spin');
   near(Math.atan2(s.vy, s.vx) * 180 / Math.PI, 55, 'angle', 1e-6);
 });
 test('glide uses glide speed and glide drain, plus the super boost', () => {
@@ -171,9 +171,9 @@ test('a Boost in the green range assumes the perfect angle; other presses do not
   assert.ok(Math.abs(Math.atan2(poor.vy, poor.vx) * 180 / Math.PI - cfg.airBoost.optimalAngleDeg) > 10, 'poor press keeps its own direction');
   assert.equal(step({ ...air, sweepMs: 500, energy: 0 }, { boostPressed: true }, noDevices, 50).boostEvent, null);
 });
-test('a solid bounce is clearly rewarding: at least 60 energy and a forward speed gain', () => {
+test('a solid bounce is clearly rewarding: at least 100 energy and a forward speed gain of at least 25%', () => {
   const s0 = falling(0, 20, -20); const flat = bounceOf(s0);
-  assert.ok(flat.lastBounce.q >= 0.8); assert.ok(flat.energy - s0.energy >= 60, `gain ${flat.energy - s0.energy}`); assert.ok(flat.vx > 20, 'forward speed gain');
+  assert.ok(flat.lastBounce.q >= 0.8); assert.ok(flat.energy - s0.energy >= 100, `gain ${flat.energy - s0.energy}`); assert.ok(flat.vx >= 20 * 1.25, `vx ${flat.vx}`);
 });
 
 test('the player starts with 3 boosts; each Boost spends one; the 4th press does nothing', () => {
@@ -220,6 +220,9 @@ function playBot({ power = 0.8, angle = 45, boosts = false, assist = false, game
     if (v.phase === 'summary') return v;
     if (v.phase === 'awaiting-answer' || v.phase === 'last-chance' || v.phase === 'boss') g.submit(key[v.round.id]);
     else if (v.phase === 'feedback') g.next();
+    else if (v.phase === 'aim-power') { if (!assist) g.tick(750 - v.aim.gaugeMs); g.lock(); }
+    else if (v.phase === 'aim-angle') { if (!assist) g.tick(425 - v.aim.gaugeMs); g.lock(); }
+    else if (v.phase === 'launching') g.tick(50);
     else { if (boosts && used < 3 && v.sim.boostCooldownMs <= 0 && v.sim.vy < 0 && v.sim.y > 30 && inGoodWindow(v.sim.sweepMs, d.config)) { g.pressBoost(); used += 1; } g.tick(50); }
   }
   throw new Error('bot did not finish');

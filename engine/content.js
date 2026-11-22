@@ -53,7 +53,7 @@ export function validateDocument(doc) {
     ['physics.bodyHalfW', g.bodyHalfW], ['physics.bodyHalfH', g.bodyHalfH], ['physics.inertiaK', g.inertiaK], ['physics.flatBlendM', g.flatBlendM],
     ['physics.roadMu', g.roadMu], ['physics.devMu', g.devMu], ['physics.rollDamp', g.rollDamp], ['physics.rightRate', g.rightRate],
     ['gauge.powerPeriodMs', gg.powerPeriodMs], ['gauge.anglePeriodMs', gg.anglePeriodMs], ['gauge.assistPower', gg.assistPower], ['gauge.assistAngleDeg', gg.assistAngleDeg],
-    ['launch.impactMs', ln.impactMs], ['launch.settleMs', ln.settleMs],
+    ['launch.impactMs', ln.impactMs], ['launch.relaunchMs', ln.relaunchMs], ['launch.settleMs', ln.settleMs],
     ['devices.count', d.count], ['devices.firstX', d.firstX], ['devices.gapStartM', d.gapStartM], ['devices.padKickMps', d.padKickMps], ['devices.energy', d.energy], ['devices.energyMinFrac', d.energyMinFrac], ['devices.padSpeedGain', d.padSpeedGain], ['devices.sideRestitution', d.sideRestitution], ['devices.sideMu', d.sideMu], ['devices.poleHalfM', d.poleHalfM],
     ['relaunch.mps', rl.mps], ['relaunch.angleDeg', rl.angleDeg],
     ['airBoost.minVx', ab.minVx], ['airBoost.maxVx', ab.maxVx], ['airBoost.minVy', ab.minVy], ['airBoost.maxVy', ab.maxVy], ['airBoost.optimalAngleDeg', ab.optimalAngleDeg], ['airBoost.perfectMinMps', ab.perfectMinMps], ['airBoost.perfectGainMps', ab.perfectGainMps], ['airBoost.perfectSpinKeep', ab.perfectSpinKeep],

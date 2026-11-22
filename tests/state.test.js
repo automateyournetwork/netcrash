@@ -77,18 +77,36 @@ test('wrong answer: one attempt, explains that option, round stays open, no poin
   assert.equal(v.lastResult.tone, 'incorrect'); assert.equal(v.mood, 'mourn');
   assert.equal(v.lastResult.body, v0.round.choices.find((c) => c.id !== v0.round.rule.correctChoice).why);
 });
-test('retry works; correct completes once with +1 point and +30 energy; repeated Submit changes nothing', () => {
+test('retry works; correct completes once with +1 point and the power-up energy; repeated Submit changes nothing', () => {
   const g = createGame(doc); const v0 = toQuestion(g); const e0 = v0.sim.energy;
   g.submit(wrongOf(v0.round)); g.submit(key.q1);
   let v = g.view();
-  assert.equal(v.phase, 'feedback'); assert.equal(v.score, 1); assert.equal(v.sim.energy, e0 + 30); assert.equal(v.attempts, 2); assert.equal(v.mood, 'celebrate');
-  g.submit(key.q1); v = g.view(); assert.equal(v.score, 1); assert.equal(v.attempts, 2); assert.equal(v.sim.energy, e0 + 30);
+  assert.equal(v.phase, 'feedback'); assert.equal(v.score, 1); assert.equal(v.sim.energy, e0 + doc.config.powerUpEnergy); assert.equal(v.attempts, 2); assert.equal(v.mood, 'celebrate');
+  g.submit(key.q1); v = g.view(); assert.equal(v.score, 1); assert.equal(v.attempts, 2); assert.equal(v.sim.energy, e0 + doc.config.powerUpEnergy);
 });
-test('Next relaunches the character; the next question is Layer 2, then 3, in order', () => {
+function reaim(g, { power = 750, angle = 425 } = {}) { g.tick(power); g.lock(); g.tick(angle); g.lock(); g.tick(doc.config.launch.relaunchMs); }
+test('after a correct answer the power and angle dials pop up again, then the character is relaunched (no Catalyst charge)', () => {
   const g = createGame(doc); toQuestion(g); g.submit(key.q1); g.next();
-  assert.equal(g.view().phase, 'flying'); assert.equal(g.view().sim.status, 'running');
+  let v = g.view();
+  assert.equal(v.phase, 'aim-power'); assert.equal(v.aim.relaunch, true); assert.equal(v.sim.status, 'paused'); const x0 = v.sim.x;
+  g.tick(300); g.tick(450); g.lock(); assert.equal(g.view().phase, 'aim-angle'); g.tick(100); g.lock();
+  assert.equal(g.view().phase, 'launching'); g.tick(doc.config.launch.relaunchMs - 50); assert.equal(g.view().phase, 'launching'); assert.equal(g.view().sim.x, x0);
+  g.tick(50); v = g.view();
+  assert.equal(v.phase, 'flying'); assert.equal(v.sim.status, 'running'); assert.equal(v.aim.relaunch, false); near(v.sim.x, x0);
+});
+test('the relaunch uses the chosen power and angle: a better lock flies faster; Assist locks the fixed good values', () => {
+  const speed = (power) => { const g = createGame(doc); toQuestion(g, { assist: false }); g.submit(key.q1); g.next(); g.tick(power); g.lock(); g.tick(425); g.lock(); g.tick(doc.config.launch.relaunchMs); return g.view().sim.speedMps; };
+  assert.ok(speed(750) > speed(200) + 5, 'more power, more speed');
+  near(speed(750), doc.config.physics.powerMaxMps + doc.config.relaunch.stepMps);
+  const g = createGame(doc); toQuestion(g, { assist: true }); g.submit(key.q1); g.next(); g.tick(123); g.lock(); g.tick(77); g.lock(); g.tick(doc.config.launch.relaunchMs);
+  const v = g.view(); const p = doc.config.physics;
+  near(v.sim.speedMps, p.powerMinMps + (p.powerMaxMps - p.powerMinMps) * doc.config.gauge.assistPower + doc.config.relaunch.stepMps);
+  near(Math.atan2(v.sim.vy, v.sim.vx) * 180 / Math.PI, doc.config.gauge.assistAngleDeg);
+});
+test('the next question follows a relaunch: Layer 2, then 3, in order', () => {
+  const g = createGame(doc); toQuestion(g); g.submit(key.q1); g.next(); reaim(g);
   for (let i = 0; i < 100000 && g.view().phase === 'flying'; i++) g.tick(50);
-  assert.equal(g.view().round.id, 'q2'); g.submit(key.q2); g.next();
+  assert.equal(g.view().round.id, 'q2'); g.submit(key.q2); g.next(); reaim(g);
   for (let i = 0; i < 100000 && g.view().phase === 'flying'; i++) g.tick(50);
   assert.equal(g.view().round.id, 'q3');
 });
@@ -129,6 +147,8 @@ function playUntil(g, stopAt, { wrongLastChance = false } = {}) {
     if (v.phase === 'last-chance' && wrongLastChance) g.submit(wrongOf(v.round));
     else if (v.phase === 'awaiting-answer' || v.phase === 'last-chance' || v.phase === 'boss') g.submit(key[v.round.id]);
     else if (v.phase === 'feedback') g.next();
+    else if (v.phase === 'aim-power') { if (!v.assist) g.tick(750 - v.aim.gaugeMs); g.lock(); }
+    else if (v.phase === 'aim-angle') { if (!v.assist) g.tick(425 - v.aim.gaugeMs); g.lock(); }
     else g.tick(50);
   }
   throw new Error('did not reach ' + stopAt);

@@ -3,7 +3,7 @@
   "config": {
     "initialEnergy": 140,
     "drainPerMeter": 0.07,
-    "powerUpEnergy": 30,
+    "powerUpEnergy": 60,
     "superBoostEnergy": 300,
     "glide": {
       "speedMps": 100000,
@@ -18,10 +18,10 @@
       "maxCount": 6
     },
     "physics": {
-      "gravity": 12,
+      "gravity": 16,
       "subSteps": 5,
-      "powerMinMps": 28,
-      "powerMaxMps": 62,
+      "powerMinMps": 38,
+      "powerMaxMps": 85,
       "angleMinDeg": 10,
       "angleMaxDeg": 80,
       "roadRestitution": 0.4,
@@ -29,7 +29,7 @@
       "slideDecel": 9,
       "stopMps": 1.5,
       "minBounceMps": 2.5,
-      "maxSpeedMps": 125,
+      "maxSpeedMps": 160,
       "bodyHalfW": 23.4,
       "bodyHalfH": 15.9,
       "inertiaK": 0.3333,
@@ -47,23 +47,24 @@
       "assistAngleDeg": 45
     },
     "launch": {
-      "impactMs": 700,
+      "impactMs": 1100,
       "settleMs": 500,
-      "spinRadS": 2.4
+      "spinRadS": 2.4,
+      "relaunchMs": 350
     },
     "devices": {
       "count": 60,
       "firstX": 150,
       "gapStartM": 50,
       "gapGrowM": 8,
-      "energy": 90,
+      "energy": 140,
       "energyMinFrac": 0.2,
-      "padKickMps": 22,
+      "padKickMps": 34,
       "kinds": [
         {
           "halfM": 22,
           "top": 40,
-          "e": 1.05,
+          "e": 1.15,
           "tiltDeg": 10,
           "boxHalfM": 14.5,
           "boxBottomM": 0
@@ -71,7 +72,7 @@
         {
           "halfM": 22,
           "top": 42,
-          "e": 1.22,
+          "e": 1.32,
           "tiltDeg": 18,
           "boxHalfM": 14.6,
           "boxBottomM": 32
@@ -79,7 +80,7 @@
         {
           "halfM": 14,
           "top": 50,
-          "e": 0.95,
+          "e": 1.05,
           "tiltDeg": 6,
           "boxHalfM": 9,
           "boxBottomM": 0
@@ -87,7 +88,7 @@
         {
           "halfM": 27,
           "top": 38,
-          "e": 1.15,
+          "e": 1.25,
           "tiltDeg": 14,
           "boxHalfM": 19,
           "boxBottomM": 22
@@ -95,7 +96,7 @@
         {
           "halfM": 26,
           "top": 38,
-          "e": 1.1,
+          "e": 1.2,
           "tiltDeg": 20,
           "boxHalfM": 18,
           "boxBottomM": 24
@@ -103,7 +104,7 @@
         {
           "halfM": 32,
           "top": 25,
-          "e": 1.0,
+          "e": 1.1,
           "tiltDeg": 5,
           "boxHalfM": 24,
           "boxBottomM": 0
@@ -111,31 +112,31 @@
         {
           "halfM": 36,
           "top": 38,
-          "e": 1.12,
+          "e": 1.22,
           "tiltDeg": 12,
           "boxHalfM": 28,
           "boxBottomM": 0
         }
       ],
-      "padSpeedGain": 0.15,
+      "padSpeedGain": 0.3,
       "sideRestitution": 0.55,
       "sideMu": 0.3,
       "poleHalfM": 2.5
     },
     "relaunch": {
-      "mps": 46,
+      "mps": 62,
       "stepMps": 3,
       "angleDeg": 55,
       "spinRadS": 1.2
     },
     "airBoost": {
-      "minVx": 6,
-      "maxVx": 30,
-      "minVy": 3,
-      "maxVy": 22,
+      "minVx": 8,
+      "maxVx": 38,
+      "minVy": 4,
+      "maxVy": 28,
       "optimalAngleDeg": 50,
-      "perfectMinMps": 66,
-      "perfectGainMps": 30,
+      "perfectMinMps": 90,
+      "perfectGainMps": 40,
       "perfectSpinKeep": 0.25
     },
     "tail": {
@@ -474,35 +475,35 @@
   "boss": {
     "id": "boss-l8",
     "layer": 8,
-    "prompt": "In IT humor and network troubleshooting folklore, what does \"Layer 8\" of the OSI model refer to?",
+    "prompt": "LAYER 8 BOSS. The switch lights are green, the pings are fine, and yet your boss has appeared at your cubicle with a coffee mug to ask if you got the memo about the new cover sheet for the TPS reports, and whether you could come in on Saturday. In network troubleshooting folklore, what is \"Layer 8\" of the OSI model?",
     "choices": [
       {
         "id": "a",
-        "label": "The cloud service provider or ISP gateway",
-        "why": "A provider gateway is real equipment, not the joke layer."
+        "label": "A premium firewall tier that automatically blocks every email beginning with \"Per my last email\"",
+        "why": "Nice idea, but Layer 8 is not a product or a device. Firewalls work at Layer 3 and up, and none of them can stop a manager with a mug."
       },
       {
         "id": "b",
-        "label": "The uninterruptible power supply (UPS) in the server room",
-        "why": "A UPS is power equipment; the joke is not about hardware."
+        "label": "The printer, specifically the one that keeps saying PC LOAD LETTER",
+        "why": "A jammed printer is a driver or paper problem (Layer 7 and Layer 1), and it may deserve a field and a baseball bat, but it is not Layer 8."
       },
       {
         "id": "c",
-        "label": "The human user, end-to-end management, or office politics",
-        "why": "Layer 8 is the informal joke layer for people and politics. It is not part of the OSI model."
+        "label": "The people: users, managers, and office politics sitting above the seven real layers",
+        "why": "Correct: Layer 8 is the informal joke layer for the humans. The cable is fine, the humans are the problem."
       },
       {
         "id": "d",
-        "label": "The physical fiber-optic cable buried underground",
-        "why": "Cabling is Layer 1."
+        "label": "The fiber run to the basement, where they moved Milton and his red stapler",
+        "why": "Cabling is Layer 1, and relocating Milton to the basement does not create a new OSI layer, just a stapler grievance."
       }
     ],
     "rule": {
       "correctChoice": "c",
       "sourceId": "layer8-pending",
-      "explanation": "Layer 8 is an informal joke: the people and politics above the seven real layers."
+      "explanation": "Layer 8 is an informal joke, not part of the OSI model: the people above the seven real layers (users, managers, and office politics). When every layer checks out and things are still broken, check Layer 8, and maybe bring a second copy of the cover sheet."
     },
     "informal": true,
-    "title": "Layer 8 boss (informal - not part of the OSI model)"
+    "title": "Layer 8 boss: the Initech Quarterly Synergy Meeting (informal - not part of the OSI model)"
   }
 }
