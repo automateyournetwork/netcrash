@@ -134,10 +134,10 @@ test('glide uses glide speed and glide drain, plus the super boost', () => {
   const t = step(s, {}, cfg, 50);
   near(t.x, 100000 * 0.05); near(s.energy - t.energy, 5000 * 0.0005); assert.equal(t.status, 'running');
 });
-test('formatSpeed shows Mbps, Gbps, Tbps and 150 m/s is exactly 400 Gbps', () => {
-  assert.equal(formatSpeed(150, cfg), '400 Gbps'); assert.equal(formatSpeed(0.03, cfg), '80 Mbps');
-  assert.equal(formatSpeed(300, cfg), '800 Gbps'); assert.equal(formatSpeed(1000, cfg), '2.7 Tbps'); assert.equal(formatSpeed(20, cfg), '53.3 Gbps');
-  near(speedGbps(150, cfg), 400, 'Gbps', 1e-6);
+test('formatSpeed shows Mbps, Gbps, Tbps and 200 m/s is exactly 400 Gbps', () => {
+  assert.equal(formatSpeed(200, cfg), '400 Gbps'); assert.equal(formatSpeed(0.04, cfg), '80 Mbps');
+  assert.equal(formatSpeed(300, cfg), '600 Gbps'); assert.equal(formatSpeed(1000, cfg), '2 Tbps'); assert.equal(formatSpeed(20, cfg), '40 Gbps');
+  near(speedGbps(200, cfg), 400, 'Gbps', 1e-6);
 });
 test('simulation is deterministic, tail included', () => {
   assert.deepEqual(run(launch(createSim(cfg), 55, 45, 2), 300), run(launch(createSim(cfg), 55, 45, 2), 300));
@@ -179,13 +179,16 @@ test('fuzz: no launch, angle or contact ever drives forward speed negative while
   }
   assert.ok(worst >= -1e-9, `most negative vx ${worst}`);
 });
-test('plaid: the flag switches on at 400 Gbps (150 m/s), stays on above 340 Gbps (127.5 m/s), off below, and counts entries', () => {
-  const air = { ...launch(createSim(noDevices), 60, 20), y: 500 };
-  let s = { ...air, vx: 149, vy: 0, speedMps: 149 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, false);
-  s = { ...air, vx: 151, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, true); assert.equal(s.plaidSeq, 1);
-  s = { ...s, vx: 135, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, true, 'hysteresis keeps it on');
-  s = { ...s, vx: 120, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, false); assert.equal(s.plaidSeq, 1);
-  s = { ...s, vx: 155, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, true); assert.equal(s.plaidSeq, 2, 'a second entry is counted');
+test('plaid: the flag switches on at 400 Gbps, stays on above 340 Gbps, off below, and counts entries', () => {
+  const on = (cfg.plaid.thresholdGbps * 1e9) / cfg.displayBitsPerMps; const off = (cfg.plaid.exitGbps * 1e9) / cfg.displayBitsPerMps;
+  near(on, 200, 'threshold speed', 1e-6); near(off, 170, 'exit speed', 1e-6);
+  const air = { ...launch(createSim(noDevices), 60, 20), y: 900 };
+  const at = (st, v) => step({ ...st, vx: v, vy: 0 }, {}, noDevices, 50);
+  let s = at(air, on - 1); assert.equal(s.plaid, false);
+  s = at(air, on + 1); assert.equal(s.plaid, true); assert.equal(s.plaidSeq, 1);
+  s = at(s, (on + off) / 2); assert.equal(s.plaid, true, 'hysteresis keeps it on');
+  s = at(s, off - 10); assert.equal(s.plaid, false); assert.equal(s.plaidSeq, 1);
+  s = at(s, on + 5); assert.equal(s.plaid, true); assert.equal(s.plaidSeq, 2, 'a second entry is counted');
 });
 test('a wedged character is shaken loose to a clear spot after a second', () => {
   const stuck = { ...launch(createSim(cfg), 30, 45), x: 330, y: 60, th: 1, w: 0, vx: 0, vy: 0, stuckMs: 960 };
@@ -235,7 +238,7 @@ test('boost pickups are deterministic, flying into one collects it (+1, capped),
 test('out of energy: horizontal speed bleeds away so the character comes down instead of floating on', () => {
   const air = { ...launch(createSim(cfg), 60, 35), y: 300, energy: 0 };
   const t = run({ ...air }, 20, {}, noDevices);
-  assert.ok(t.vx < air.vx * 0.5, `vx ${t.vx} vs ${air.vx}`);
+  assert.ok(t.vx < air.vx * 0.85, `vx ${t.vx} vs ${air.vx}`);
   const fed = run({ ...air, energy: 500 }, 20, {}, noDevices); assert.ok(fed.vx > air.vx * 0.9, 'with energy there is no dry drag');
 });
 test('a better contact launches along a better angle: the exit direction moves toward the ideal pad angle, speed kept', () => {

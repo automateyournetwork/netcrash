@@ -113,10 +113,10 @@ check('stage text has no null/undefined/NaN', !/null|undefined|NaN/.test(el('sta
   window.matchMedia = () => ({ matches: true }); updateStage(game.view());
   check('animation defaults to on even when the system prefers reduced motion', sceneAnimationOn() === true && el('motion-note').textContent === '');
   const mt = el('motion-toggle'); mt.checked = false; fire('change', mt); frames(2);
-  check('animation off: no scroll, no tilt, readouts still update, note shows the switch', el('ly-far').getAttribute('transform') === 'translate(0 0)' && /^rotate\(-?0(\.00)?\)$/.test(el('char-spin').getAttribute('transform')) && /m$/.test(hud('ov-distance')) && el('motion-note').textContent.includes('Scene animation'));
+  check('animation off: no scroll, no tilt, readouts still update, note shows the switch', /translate\(0 0\)$/.test(el('ly-far').getAttribute('transform')) && /^rotate\(-?0(\.00)?\)$/.test(el('char-spin').getAttribute('transform')) && /m$/.test(hud('ov-distance')) && el('motion-note').textContent.includes('Scene animation'));
   mt.checked = true; fire('change', mt); frames(3);
   const f1 = el('ly-far').getAttribute('transform'); frames(3);
-  check('animation on: scene scrolls again', f1 !== 'translate(0 0)' && el('ly-far').getAttribute('transform') !== f1 && el('motion-note').textContent === '');
+  check('animation on: scene scrolls again', !/translate\(0 0\)$/.test(f1) && el('ly-far').getAttribute('transform') !== f1 && el('motion-note').textContent === '');
   delete window.matchMedia;
 }
 click('boost'); frames(2);

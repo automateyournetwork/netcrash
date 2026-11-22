@@ -69,7 +69,7 @@ const mk = (t, a, text) => {
 const grp = (attrs, ...kids) => { const g = mk('g', attrs); for (const k of kids.flat()) g.append(k); return g; };
 
 // Scene geometry (viewBox height 400; the width adapts to the window, FR-045). PX_PER_M scrolls the road with distance.
-const SCENE = { w: 700, h: 400, roadY: 346, groundPx: 368, charX: 230, pxPerM: 1.6, charScale: 1.7, devScale: 0.9, liftAt: 150 };
+const SCENE = { w: 700, h: 400, roadY: 346, groundPx: 368, charX: 230, pxPerM: 2.0, charScale: 1.95, devScale: 1.05, liftAt: 150 };
 
 // Roadside landmarks. Slots 1-7 are generic network scenery that is deliberately NOT the item in
 // the matching round and carries no layer number or name (FR-029: never hint an answer). Slot 8 is
@@ -279,7 +279,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 
 function treeRow(tile, y, rx, ry, c1, c2, step) {
   const g = grp({});
-  for (let t = 0; t < 5; t++) for (let x = 0; x < tile; x += step) {
+  for (let t = 0; t < 8; t++) for (let x = 0; x < tile; x += step) {
     const cx = t * tile + x + step / 2;
     g.append(mk('ellipse', { cx, cy: y, rx, ry, fill: c1 }), mk('ellipse', { cx: cx - rx * 0.25, cy: y - ry * 0.25, rx: rx * 0.6, ry: ry * 0.6, fill: c2 }));
   }
@@ -380,13 +380,13 @@ function stage(v) {
   const svg = mk('svg', { id: 'scene-svg', viewBox: viewBox(), role: 'img', preserveAspectRatio: 'xMidYMax meet', 'aria-label': 'Side-scrolling road scene. A network cable plug is launched by a Catalyst 6500 and bounces off network devices standing along the road.' });
   const cloud = (x, y, s) => grp({ transform: `translate(${x} ${y}) scale(${s})` }, mk('ellipse', { cx: 0, cy: 0, rx: 50, ry: 16, fill: '#fff', opacity: 0.92 }), mk('ellipse', { cx: -18, cy: -10, rx: 24, ry: 16, fill: '#fff', opacity: 0.92 }), mk('ellipse', { cx: 14, cy: -13, rx: 28, ry: 18, fill: '#fff', opacity: 0.92 }));
   const clouds = grp({ id: 'ly-clouds' });
-  for (let t = 0; t < 4; t++) clouds.append(cloud(t * 700 + 160, 70, 1.2), cloud(t * 700 + 470, 120, 0.9), cloud(t * 700 + 640, 50, 0.7), cloud(t * 700 + 90, -60, 1.1), cloud(t * 700 + 380, -170, 1.3), cloud(t * 700 + 560, -290, 0.9), cloud(t * 700 + 250, -400, 1.2));
+  for (let t = 0; t < 5; t++) clouds.append(cloud(t * 700 + 160, 70, 1.2), cloud(t * 700 + 470, 120, 0.9), cloud(t * 700 + 640, 50, 0.7), cloud(t * 700 + 90, -60, 1.1), cloud(t * 700 + 380, -170, 1.3), cloud(t * 700 + 560, -290, 0.9), cloud(t * 700 + 250, -400, 1.2));
   const far = grp({ id: 'ly-far' }, treeRow(350, 270, 36, 62, '#3f8f3f', '#5fae55', 70));
   const near = grp({ id: 'ly-near' }, treeRow(350, 318, 30, 34, '#2f7a34', '#4f9a47', 46));
   const road = grp({ id: 'ly-road' });
-  road.append(mk('rect', { x: 0, y: sc.roadY - 14, width: 4000, height: 14, fill: '#d9dde3' }), mk('rect', { x: 0, y: sc.roadY, width: 4000, height: sc.h - sc.roadY + 400, fill: '#6c727c' }));
+  road.append(mk('rect', { x: -1500, y: sc.roadY - 14, width: 6000, height: 14, fill: '#d9dde3' }), mk('rect', { x: -1500, y: sc.roadY, width: 6000, height: sc.h - sc.roadY + 400, fill: '#6c727c' }));
   const lines = grp({ id: 'ly-lines' });
-  for (let i = 0; i < 40; i++) lines.append(mk('rect', { x: i * 70, y: sc.roadY + 28, width: 36, height: 5, fill: '#e9edf2' }), mk('rect', { x: i * 70, y: sc.roadY - 14, width: 6, height: 14, fill: '#9aa1ad' }));
+  for (let i = 0; i < 70; i++) lines.append(mk('rect', { x: i * 70 - 700, y: sc.roadY + 28, width: 36, height: 5, fill: '#e9edf2' }), mk('rect', { x: i * 70 - 700, y: sc.roadY - 14, width: 6, height: 14, fill: '#9aa1ad' }));
   const marks = grp({ id: 'ly-landmarks' });
   for (let n = 0; n < 10; n++) marks.append(grp({ 'data-slot': n, visibility: 'hidden' }));
   marks.append(grp({ id: 'tower', visibility: 'hidden' }, landmark(8)));
@@ -401,7 +401,8 @@ function stage(v) {
   const streaks = grp({ id: 'streaks', opacity: 0 });
   for (let i = 0; i < 5; i++) streaks.append(mk('line', { x1: chX() - 150 - i * 20, y1: 90 + i * 22, x2: chX() - 40 - i * 8, y2: 90 + i * 22, stroke: '#fff', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0.7 }));
   const plaidBg = grp({ id: 'plaid-bg', visibility: 'hidden' }, mk('rect', { x: -400, y: sc.h - 1800, width: 4000, height: 1800 + 200, fill: 'url(#plaid-pat)' }));
-  svg.append(plaidDefs(), clouds, far, near, plaidBg, ground, streaks, aim, tail, char, rvCabin(), dials(config));
+  // `world` is zoomed out with altitude (camera) so the road and devices always stay in view.
+  svg.append(plaidDefs(), clouds, far, near, plaidBg, grp({ id: 'world' }, ground, aim, tail, char), streaks, rvCabin(), dials(config));
 
   const hud = h('div', { class: 'stage-hud', 'aria-hidden': 'true' },
     h('div', { class: 'hud-tl' },
@@ -466,12 +467,17 @@ function updateScene(v) {
   if (!glide) vis.glideT0 = null;
   const d = still ? 0 : glide ? vis.glideX0 + ((now - vis.glideT0) / 1000) * GLIDE_M_PER_S : live.x;
   const yPx = still ? v.config.physics.bodyHalfH * sc.pxPerM : glide ? 190 + Math.sin(now / 420) * 14 : live.y * sc.pxPerM;
-  const camY = Math.max(0, yPx - (view.h > sc.h ? view.h * 0.55 : sc.liftAt));
+  // Camera: zoom out about the road under the character so a high arc still shows the ground (never below 0.5x).
+  const fit = view.h > sc.h ? view.h * 0.5 : 300;
+  const zWant = still ? 1 : Math.max(0.5, Math.min(1, fit / Math.max(yPx, 1)));
+  vis.zoom = vis.zoom === undefined ? 1 : vis.zoom + (zWant - vis.zoom) * (zWant < vis.zoom ? 0.25 : 0.1);
+  const Z = vis.zoom; const camY = 0;
+  const about = `translate(${chX()} ${sc.groundPx}) scale(${Z.toFixed(3)}) translate(${-chX()} ${-sc.groundPx})`;
   const off = (f, tile) => -((d * sc.pxPerM * f) % tile);
-  $('ly-clouds').setAttribute('transform', `translate(${off(0.15, 700)} ${camY * 0.2})`);
-  $('ly-far').setAttribute('transform', `translate(${off(0.35, 350)} ${camY * 0.5})`);
-  $('ly-near').setAttribute('transform', `translate(${off(0.6, 350)} ${camY * 0.7})`);
-  $('ground').setAttribute('transform', `translate(0 ${camY})`);
+  $('ly-clouds').setAttribute('transform', `translate(${off(0.15, 700)} ${((1 - Z) * 60).toFixed(1)})`);
+  $('ly-far').setAttribute('transform', `${about} translate(${off(0.35, 350)} 0)`);
+  $('ly-near').setAttribute('transform', `${about} translate(${off(0.6, 350)} 0)`);
+  $('world').setAttribute('transform', about);
   $('ly-lines-wrap').setAttribute('transform', `translate(${off(1, 70)} 0)`);
 
   // Devices along the road: a pool of 10 slots keyed by device id, redrawn only when the kind changes.
@@ -481,7 +487,7 @@ function updateScene(v) {
     let shownStill = false;
     for (const dev of s.devices) {
       const dm = dev.x - live.x;
-      if (dm < -(chX() + 140) / sc.pxPerM || dm > (view.w - chX() + 140) / sc.pxPerM) { if (dm > 0) break; continue; }
+      if (dm < -(chX() + 140) / sc.pxPerM / Z || dm > (view.w - chX() + 140) / sc.pxPerM / Z) { if (dm > 0) break; continue; }
       if (still && (dm < 0 || shownStill)) continue;
       const slot = dev.id % 10; used.add(slot);
       const g = marks.children[slot];
@@ -525,8 +531,8 @@ function updateScene(v) {
   if (!glide) {
     for (const k of s.pickups) {
       const dm = k.x - live.x;
-      if (dm < -(chX() + 60) / sc.pxPerM) continue;
-      if (dm > (view.w - chX() + 60) / sc.pxPerM) break;
+      if (dm < -(chX() + 60) / sc.pxPerM / Z) continue;
+      if (dm > (view.w - chX() + 60) / sc.pxPerM / Z) break;
       if (s.taken.includes(k.id)) continue;
       const slot = k.id % 8; usedP.add(slot);
       const g = picks.children[slot];

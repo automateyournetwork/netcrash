@@ -2,14 +2,14 @@
   "schemaVersion": 2,
   "config": {
     "initialEnergy": 140,
-    "drainPerMeter": 0.14,
-    "powerUpEnergy": 60,
+    "drainPerMeter": 0.05,
+    "powerUpEnergy": 80,
     "superBoostEnergy": 300,
     "glide": {
       "speedMps": 100000,
       "drainPerMeter": 0.0005
     },
-    "displayBitsPerMps": 2666666667,
+    "displayBitsPerMps": 2000000000,
     "boost": {
       "cooldownMs": 1200,
       "sweepMs": 2000,
@@ -18,10 +18,10 @@
       "maxCount": 6
     },
     "physics": {
-      "gravity": 18,
+      "gravity": 12,
       "subSteps": 5,
-      "powerMinMps": 46,
-      "powerMaxMps": 105,
+      "powerMinMps": 55,
+      "powerMaxMps": 126,
       "angleMinDeg": 8,
       "angleMaxDeg": 62,
       "roadRestitution": 0.4,
@@ -29,7 +29,7 @@
       "slideDecel": 9,
       "stopMps": 1.5,
       "minBounceMps": 2.5,
-      "maxSpeedMps": 190,
+      "maxSpeedMps": 230,
       "bodyHalfW": 23.4,
       "bodyHalfH": 15.9,
       "inertiaK": 0.3333,
@@ -39,7 +39,7 @@
       "rollDamp": 0.75,
       "rightRate": 6,
       "spinDrag": 0.05,
-      "dryDragPerS": 0.9
+      "dryDragPerS": 0.3
     },
     "gauge": {
       "powerPeriodMs": 1500,
@@ -57,10 +57,10 @@
       "count": 60,
       "firstX": 150,
       "gapStartM": 50,
-      "gapGrowM": 16,
-      "energy": 140,
+      "gapGrowM": 24,
+      "energy": 220,
       "energyMinFrac": 0.2,
-      "padKickMps": 34,
+      "padKickMps": 50,
       "kinds": [
         {
           "halfM": 28,
@@ -119,32 +119,32 @@
           "boxBottomM": 0
         }
       ],
-      "padSpeedGain": 0.3,
+      "padSpeedGain": 0.45,
       "poleHalfM": 2.5,
       "padAngleDeg": 32,
       "padAimBlend": 0.9,
-      "padAddVx": 8,
-      "vaultBoostMps": 6,
-      "vaultMinMps": 10,
+      "padAddVx": 30,
+      "vaultBoostMps": 22,
+      "vaultMinMps": 20,
       "vaultClearM": 8,
-      "vaultMaxVy": 70,
+      "vaultMaxVy": 90,
       "vaultCoolMs": 1200,
       "vaultClimbMul": 1.2
     },
     "relaunch": {
-      "mps": 62,
+      "mps": 74,
       "stepMps": 3,
       "angleDeg": 35,
       "spinRadS": 1.2
     },
     "airBoost": {
-      "minVx": 12,
-      "maxVx": 62,
-      "minVy": 3,
-      "maxVy": 16,
+      "minVx": 14,
+      "maxVx": 74,
+      "minVy": 4,
+      "maxVy": 28,
       "optimalAngleDeg": 35,
-      "perfectMinMps": 100,
-      "perfectGainMps": 30,
+      "perfectMinMps": 120,
+      "perfectGainMps": 36,
       "perfectSpinKeep": 0.25
     },
     "tail": {
