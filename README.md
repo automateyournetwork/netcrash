@@ -1,5 +1,7 @@
 # NETCRASH
 
+![NETCRASH: an angry horned Catalyst 6500 switch charges at a cartoon RJ45 plug on a road with network devices ahead](assets/images/title.png)
+
 A browser game **inspired by** the Flash launch game *Nanaca Crash* (no assets, code or text from it are used; all art is original SVG), themed on networking, for entry-level network
 engineers. Your character stands on the road; you press Launch, lock a sweeping **power** dial and a sweeping
 **angle** dial (analog gauges drawn in the scene, on the far right, shown only when needed) with one click each (timing is key), and a Catalyst 6500 streaks in and rams the character.
