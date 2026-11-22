@@ -13,7 +13,7 @@ import socket
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
-    BLOCKED_SUFFIXES = ('.zip', ':zone.identifier', '.py')
+    BLOCKED_SUFFIXES = ('.zip', ':zone.identifier', '.py', '.ps1')
 
     def _blocked(self):
         path = self.path.split('?', 1)[0].lower()

@@ -35,7 +35,7 @@ cd netcrash && python3 serve.py            # listens on all interfaces, port 800
 It prints the addresses to open, for example `http://192.168.1.20:8000/`. It serves only the game files
 (the reference `*.zip` and `serve.py` return 404) and needs no build step.
 
-**If this machine is Windows with the game inside WSL2** (the case on the dev workstation) the other
+**If this machine is Windows with the game inside WSL2** (easiest: run `expose-wsl.ps1` in an administrator PowerShell; it does Option A below with the current WSL address and a Private-network-only firewall rule, and `-Remove` undoes it) (the case on the dev workstation) the other
 device cannot see WSL directly. Do one of these in an **administrator** PowerShell:
 
 ```powershell
