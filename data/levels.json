@@ -487,35 +487,35 @@
   "boss": {
     "id": "boss-l8",
     "layer": 8,
-    "prompt": "LAYER 8 BOSS. The switch lights are green, the pings are fine, and yet your boss has appeared at your cubicle with a coffee mug to ask if you got the memo about the new cover sheet for the TPS reports, and whether you could come in on Saturday. In network troubleshooting folklore, what is \"Layer 8\" of the OSI model?",
+    "prompt": "After the CEO\u2019s \u201cquick fix\u201d causes a data breach, which Layer 8 frame dominates the post-mortem?",
     "choices": [
       {
         "id": "a",
-        "label": "A premium firewall tier that automatically blocks every email beginning with \"Per my last email\"",
-        "why": "Nice idea, but Layer 8 is not a product or a device. Firewalls work at Layer 3 and up, and none of them can stop a manager with a mug."
+        "label": "Three-way handshake",
+        "why": "The three-way handshake (SYN, SYN-ACK, ACK) is how TCP opens a connection at Layer 4. Nobody has ever shaken on anything in a post-mortem."
       },
       {
         "id": "b",
-        "label": "The printer, specifically the one that keeps saying PC LOAD LETTER",
-        "why": "A jammed printer is a driver or paper problem (Layer 7 and Layer 1), and it may deserve a field and a baseball bat, but it is not Layer 8."
+        "label": "CYA encapsulation",
+        "why": "Correct: just as encapsulation wraps data in headers at every layer, CYA encapsulation wraps every fact in a defensible wrapper before it travels up the org chart."
       },
       {
         "id": "c",
-        "label": "The people: users, managers, and office politics sitting above the seven real layers",
-        "why": "Correct: Layer 8 is the informal joke layer for the humans. The cable is fine, the humans are the problem."
+        "label": "Cross-team blame routing",
+        "why": "Blame does get routed between teams, but routing is a Layer 3 word and the blame never arrives unwrapped: the dominant frame is the one that wraps it first (see B)."
       },
       {
         "id": "d",
-        "label": "The fiber run to the basement, where they moved Milton and his red stapler",
-        "why": "Cabling is Layer 1, and relocating Milton to the basement does not create a new OSI layer, just a stapler grievance."
+        "label": "Mandatory trust-fall",
+        "why": "A trust-fall is a team-building exercise, not a frame. The only thing it encapsulates is somebody's sprained wrist."
       }
     ],
     "rule": {
-      "correctChoice": "c",
+      "correctChoice": "b",
       "sourceId": "layer8-pending",
-      "explanation": "Layer 8 is an informal joke, not part of the OSI model: the people above the seven real layers (users, managers, and office politics). When every layer checks out and things are still broken, check Layer 8, and maybe bring a second copy of the cover sheet."
+      "explanation": "In Layer 8, truth is deprecated but liability is mandatory. Layer 8 is the informal joke layer for people and office politics; it is not part of the OSI model."
     },
     "informal": true,
-    "title": "Layer 8 boss: the Initech Quarterly Synergy Meeting (informal - not part of the OSI model)"
+    "title": "Layer 8 boss: the post-mortem (informal - not part of the OSI model)"
   }
 }

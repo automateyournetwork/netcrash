@@ -36,5 +36,5 @@ test('feedback text uses lettered options and explains the answer', () => {
   assert.includes(explain(evaluate(q, doc.sources, 'b'), q).headline, 'B) Hub');
   assert.includes(explain(evaluate(q, doc.sources, 'a'), q).headline, 'A) Router');
   assert.includes(explain(evaluate(q, doc.sources, 'b'), q).body, 'Layer 1');
-  assert.includes(explain(evaluate(doc.boss, doc.sources, 'c'), doc.boss).nextStep, 'glide');
+  assert.includes(explain(evaluate(doc.boss, doc.sources, doc.boss.rule.correctChoice), doc.boss).nextStep, 'glide');
 });

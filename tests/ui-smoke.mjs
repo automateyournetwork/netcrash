@@ -168,14 +168,16 @@ for (let layer = 2; layer <= 7; layer++) {
   pick(keyByLayer[layer]); click('submit');
   check(`layer ${layer} correct`, fb().includes('Correct'), fb());
   click('next');
-  if (layer < 7) { click('lock'); click('lock'); until(() => phase() === 'flying'); } // power-up: aim again; after Layer 7 the boss follows
+  check(`after layer ${layer} the dials pop up again (no skipping to the boss)`, phase() === 'aim-power' && text().includes('Power up'));
+  click('lock'); click('lock'); until(() => phase() === 'flying'); // power-up: aim again; after Layer 7 the boss comes at the next stop
 }
 until(() => phase() === 'boss', 60000);
-check('boss screen shown, labeled informal, four options', text().includes('informal') && radios() === 4);
+check('the Layer 8 boss appears at the next stop: labeled informal, the post-mortem question, four options', text().includes('informal') && text().includes('quick fix') && text().includes('Layer 8') && radios() === 4);
+check('boss options are the owner\'s', ['A) Three-way handshake', 'B) CYA encapsulation', 'C) Cross-team blame routing', 'D) Mandatory trust-fall'].every((t) => text().includes(t)));
 pick('a'); click('submit');
 check('wrong boss option stays open and explains it', fb().includes('Not quite') && !!byAction('submit'));
-pick('c'); click('submit');
-check('boss defeated', fb().includes('Correct') && fb().includes('Layer 8'));
+pick('b'); click('submit');
+check('boss defeated: CYA encapsulation, liability is mandatory', fb().includes('Correct') && fb().includes('CYA encapsulation') && fb().includes('liability is mandatory'), fb());
 click('next');
 check('glide with no questions', text().includes('Victory glide') && hud('hud-speed').includes('Tbps'), hud('hud-speed'));
 until(() => phase() === 'summary', 100000);

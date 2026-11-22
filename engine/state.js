@@ -48,6 +48,12 @@ export function createGame(doc) {
     S.phase = lastChance ? 'last-chance' : 'awaiting-answer';
   }
 
+  // After Layer 7 the boss is asked at the next stop, like every other question (FR-023): no last chance, retries are free.
+  function openBoss() {
+    S.sim = ackQuestion(S.sim);
+    S.currentRoundId = boss.id; S.lastChance = false; S.lastResult = null; S.contentError = validation.boss; S.phase = 'boss';
+  }
+
   // The character stopped on the road (a miss) or the glide ran dry.
   function handleStatus() {
     const st = S.sim.status;
@@ -57,7 +63,8 @@ export function createGame(doc) {
         const dry = S.sim.energy <= 1e-9;
         if (dry) { S.lastChanceUsed = true; S.lastChances += 1; }
         openQuestion(dry);
-      } else if (S.sim.energy <= 1e-9) finish('out-of-energy');
+      } else if (!S.bossDefeated) openBoss();
+      else if (S.sim.energy <= 1e-9) finish('out-of-energy');
       else S.sim = resume(S.sim, config);
     } else if (st === 'stopped') finish(S.sim.phase === 'glide' ? 'victory' : 'out-of-energy');
   }
@@ -146,7 +153,7 @@ export function createGame(doc) {
         else {
           S.score += 1;
           S.sim = onCorrectAnswer(S.sim, config);
-          S.pendingNext = S.completedRoundIds.length >= rounds.length ? 'boss' : 'flying';
+          S.pendingNext = 'flying'; // always the power-up re-aim; the boss comes at the next stop
         }
         S.phase = 'feedback';
         setMood('celebrate');
@@ -161,8 +168,7 @@ export function createGame(doc) {
     next() {
       if (S.phase !== 'feedback') return api.view();
       const to = S.pendingNext; S.pendingNext = null; S.lastResult = null; S.mood = null;
-      if (to === 'boss') { S.phase = 'boss'; S.currentRoundId = boss.id; S.contentError = validation.boss; }
-      else if (to === 'glide') { S.sim = startGlide(S.sim, config); S.phase = 'glide'; S.currentRoundId = null; }
+      if (to === 'glide') { S.sim = startGlide(S.sim, config); S.phase = 'glide'; S.currentRoundId = null; }
       else { S.relaunch = true; S.gaugeMs = 0; S.lockedPower = null; S.lockedAngle = null; S.phase = 'aim-power'; } // power-up: aim again
       return api.view();
     },

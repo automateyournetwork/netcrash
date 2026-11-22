@@ -177,19 +177,37 @@ test('a stop at zero energy is never silent: a question is open whenever the cha
   }
   assert.ok(g.view().phase === 'boss', 'never ended without asking');
 });
-test('boss (Layer 8) appears right after Layer 7; wrong stays open without cost; correct leads to glide with no more questions', () => {
-  const g = createGame(doc);
+test('after Layer 7 you get the power-up re-aim and a relaunch (no skipping); the Layer 8 boss comes at the NEXT stop', () => {
+  const g = createGame(rich()); toQuestion(g);
+  for (let layer = 1; layer <= 7; layer++) {
+    let v = g.view();
+    if (layer > 1) { for (let i = 0; i < 100000 && g.view().phase === 'flying'; i++) g.tick(50); v = g.view(); }
+    assert.equal(v.round.id, `q${layer}`); g.submit(key[`q${layer}`]); g.next();
+    assert.equal(g.view().phase, 'aim-power', `after Layer ${layer} the dials pop up again`); assert.equal(g.view().aim.relaunch, true);
+    reaim(g); assert.equal(g.view().phase, 'flying', `relaunched after Layer ${layer}`);
+  }
+  assert.equal(g.view().score, 7);
+  for (let i = 0; i < 100000 && g.view().phase === 'flying'; i++) g.tick(50);
+  assert.equal(g.view().phase, 'boss'); assert.equal(g.view().askedCount, 7, 'the boss is not one of the numbered layer questions');
+});
+test('boss (Layer 8): wrong stays open without cost; correct (B) leads to glide with no more questions', () => {
+  const mid = clone(doc); mid.config.initialEnergy = 3000; // ample, but the glide still ends in a reasonable time
+  const g = createGame(mid);
   let v = playUntil(g, 'boss');
-  assert.equal(v.phase, 'boss'); assert.equal(v.score, 7); assert.includes(v.round.title, 'informal');
+  assert.equal(v.phase, 'boss'); assert.equal(v.score, 7); assert.includes(v.round.title, 'informal'); assert.equal(v.round.rule.correctChoice, 'b');
   const energy = v.sim.energy;
-  g.submit(wrongOf(v.round)); v = g.view();
-  assert.equal(v.phase, 'boss'); assert.equal(v.score, 7); assert.equal(v.sim.energy, energy); assert.equal(v.bossDefeated, false);
-  g.submit('c'); v = g.view();
-  assert.equal(v.phase, 'feedback'); assert.equal(v.bossDefeated, true); assert.equal(v.score, 7);
+  g.submit('a'); v = g.view();
+  assert.equal(v.phase, 'boss'); assert.equal(v.score, 7); assert.equal(v.sim.energy, energy); assert.equal(v.bossDefeated, false); assert.includes(v.lastResult.body, 'three-way handshake');
+  g.submit('b'); v = g.view();
+  assert.equal(v.phase, 'feedback'); assert.equal(v.bossDefeated, true); assert.equal(v.score, 7); assert.includes(v.lastResult.body, 'liability is mandatory');
   g.next(); v = g.view(); assert.equal(v.phase, 'glide');
   assert.ok(v.sim.energy >= energy + 300 - 1e-6, 'super boost granted');
   for (let i = 0; i < 100000 && g.view().phase === 'glide'; i++) g.tick(50);
   v = g.view(); assert.equal(v.phase, 'summary'); assert.equal(v.outcome, 'victory'); assert.equal(v.score, 7);
+});
+test('the boss is asked even with no energy (no last chance, retries are free)', () => {
+  const v = playUntil(createGame(harsh()), 'boss');
+  assert.equal(v.phase, 'boss'); assert.equal(v.lastChance, false);
 });
 test('score never exceeds the number of layer questions and never goes negative', () => {
   const v = playUntil(createGame(doc), 'summary');

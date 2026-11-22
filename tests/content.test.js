@@ -10,9 +10,11 @@ test('shipped content is valid: 7 layer questions, a Layer 8 boss, a source for 
   doc.rounds.forEach((r, i) => assert.equal(r.layer, i + 1));
   for (const r of [...doc.rounds, doc.boss]) assert.equal(r.choices.length, 4);
 });
-test('answer key is the standard one: B C B D B A D, boss C', () => {
+test('answer key: B C B D B A D, and the owner\'s Layer 8 question has key B (CYA encapsulation)', () => {
   assert.equal(doc.rounds.map((r) => r.rule.correctChoice).join(''), 'bcbdbad');
-  assert.equal(doc.boss.rule.correctChoice, 'c');
+  assert.equal(doc.boss.rule.correctChoice, 'b'); assert.includes(doc.boss.choices.find((c) => c.id === 'b').label, 'CYA encapsulation');
+  assert.equal(doc.boss.choices.map((c) => c.label).join('|'), 'Three-way handshake|CYA encapsulation|Cross-team blame routing|Mandatory trust-fall');
+  assert.includes(doc.boss.rule.explanation, 'truth is deprecated but liability is mandatory');
 });
 test('no hints, worked solutions, briefings or concepts remain in the data', () => {
   const text = JSON.stringify(doc);
