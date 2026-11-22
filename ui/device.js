@@ -62,3 +62,10 @@ export function createQualityMonitor({ lowFps = 40, afterMs = 3000 } = {}) {
     }
   };
 }
+
+// Altitude camera (FR-055): zoom out about the road so a high arc still shows the road and devices.
+// `heightPx` is the character's height in screen pixels at zoom 1, `fitPx` the height that still fits.
+export function cameraZoom(heightPx, fitPx, minZoom = 0.5) {
+  if (!(heightPx > 0) || !(fitPx > 0)) return 1;
+  return Math.max(minZoom, Math.min(1, fitPx / heightPx));
+}

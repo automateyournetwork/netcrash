@@ -1,6 +1,6 @@
 // DOM rendering. Content is set with textContent only (no innerHTML).
 import { formatSpeed, gaugeValue, boostQuality } from '../engine/sim.js';
-import { sceneSize } from './device.js';
+import { sceneSize, cameraZoom } from './device.js';
 
 export function h(tag, attrs, ...children) {
   const el = document.createElement(tag);
@@ -469,7 +469,7 @@ function updateScene(v) {
   const yPx = still ? v.config.physics.bodyHalfH * sc.pxPerM : glide ? 190 + Math.sin(now / 420) * 14 : live.y * sc.pxPerM;
   // Camera: zoom out about the road under the character so a high arc still shows the ground (never below 0.5x).
   const fit = view.h > sc.h ? view.h * 0.5 : 300;
-  const zWant = still ? 1 : Math.max(0.5, Math.min(1, fit / Math.max(yPx, 1)));
+  const zWant = still ? 1 : cameraZoom(yPx, fit);
   vis.zoom = vis.zoom === undefined ? 1 : vis.zoom + (zWant - vis.zoom) * (zWant < vis.zoom ? 0.25 : 0.1);
   const Z = vis.zoom; const camY = 0;
   const about = `translate(${chX()} ${sc.groundPx}) scale(${Z.toFixed(3)}) translate(${-chX()} ${-sc.groundPx})`;

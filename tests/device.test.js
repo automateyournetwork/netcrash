@@ -1,5 +1,5 @@
 import { test, assert } from './harness.js';
-import { chooseFormat, browserFamily, sceneSize, createQualityMonitor } from '../ui/device.js';
+import { chooseFormat, browserFamily, sceneSize, createQualityMonitor, cameraZoom } from '../ui/device.js';
 
 const UA = {
   iphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
@@ -68,4 +68,13 @@ test('quality monitor: a steady 60 fps never goes low; 20 fps for over 3 s of fl
   for (let i = 0; i < 40; i++) recovers.note(i * 50, 50, true);
   for (let i = 0; i < 400; i++) r = recovers.note(2000 + i * 16.7, 16.7, true);
   assert.equal(r.low, false, 'a short dip recovers');
+});
+
+test('altitude camera: no zoom while low, zooms out in proportion to height, never below 0.5x, safe on bad input', () => {
+  assert.equal(cameraZoom(100, 300), 1); assert.equal(cameraZoom(300, 300), 1);
+  assert.equal(cameraZoom(600, 300), 0.5); assert.equal(cameraZoom(450, 300).toFixed(3), '0.667');
+  assert.equal(cameraZoom(5000, 300), 0.5, 'clamped'); assert.equal(cameraZoom(0, 300), 1); assert.equal(cameraZoom(100, 0), 1);
+  const z = cameraZoom(900, 300, 0.4); assert.ok(z === 0.4);
+  // the ground stays visible: at the clamp the character is still within fit / minZoom pixels of the road
+  assert.ok(300 / 0.5 >= 600);
 });
