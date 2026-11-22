@@ -37,7 +37,7 @@ creator:                     # (HUMAN) only what was given or is on the repo is 
   links: []
   first_spec_project: true   # template default, not confirmed by the owner
   workshop: "NAF AC6"
-  consent_to_publish: false  # stays false until the owner says yes to being listed
+  consent_to_publish: true   # the owner consented to being listed
 
 build:
   started: "2026-11-21T16:22:40Z"     # first message in the session transcripts
