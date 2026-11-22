@@ -1,0 +1,6 @@
+# Windows download markers (WSL)
+*:Zone.Identifier
+# The original Flash game archive: copyrighted reference material, never committed or served
+*.zip
+__pycache__/
+*.log

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>NETCRASH tests</title>
+<style>body{font:16px system-ui;margin:16px}.pass{color:#0a0}.fail{color:#c00}pre{white-space:pre-wrap}</style></head>
+<body><h1>NETCRASH tests</h1><p id="summary" role="status">Running...</p><ul id="failures"></ul>
+<script type="module">
+import { runAll } from './harness.js';
+import './content.test.js'; import './rules.test.js'; import './sim.test.js'; import './state.test.js'; import './device.test.js';
+const r = await runAll();
+const s = document.getElementById('summary');
+if (r.noTests) { s.textContent = 'FAIL: zero tests were discovered.'; s.className = 'fail'; }
+else {
+  s.textContent = `${r.passed} / ${r.total} passed, ${r.failed.length} failed.`;
+  s.className = r.failed.length ? 'fail' : 'pass';
+  for (const f of r.failed) { const li = document.createElement('li'); li.textContent = `${f.name}: ${f.error}`; document.getElementById('failures').append(li); }
+}
+</script></body></html>

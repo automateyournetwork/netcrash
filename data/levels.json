@@ -1,0 +1,508 @@
+{
+  "schemaVersion": 2,
+  "config": {
+    "initialEnergy": 140,
+    "drainPerMeter": 0.07,
+    "powerUpEnergy": 30,
+    "superBoostEnergy": 300,
+    "glide": {
+      "speedMps": 100000,
+      "drainPerMeter": 0.0005
+    },
+    "displayBitsPerMps": 10000000,
+    "boost": {
+      "cooldownMs": 1200,
+      "sweepMs": 2000,
+      "goodQuality": 0.75,
+      "startCount": 3,
+      "maxCount": 6
+    },
+    "physics": {
+      "gravity": 12,
+      "subSteps": 5,
+      "powerMinMps": 28,
+      "powerMaxMps": 62,
+      "angleMinDeg": 10,
+      "angleMaxDeg": 80,
+      "roadRestitution": 0.4,
+      "roadFriction": 0.7,
+      "slideDecel": 9,
+      "stopMps": 1.5,
+      "minBounceMps": 2.5,
+      "maxSpeedMps": 125,
+      "bodyHalfW": 23.4,
+      "bodyHalfH": 15.9,
+      "inertiaK": 0.3333,
+      "flatBlendM": 6,
+      "roadMu": 0.6,
+      "devMu": 0.2,
+      "rollDamp": 0.75,
+      "rightRate": 6,
+      "spinDrag": 0.05
+    },
+    "gauge": {
+      "powerPeriodMs": 1500,
+      "anglePeriodMs": 1700,
+      "assistPower": 0.8,
+      "assistAngleDeg": 45
+    },
+    "launch": {
+      "impactMs": 700,
+      "settleMs": 500,
+      "spinRadS": 2.4
+    },
+    "devices": {
+      "count": 60,
+      "firstX": 150,
+      "gapStartM": 50,
+      "gapGrowM": 8,
+      "energy": 90,
+      "energyMinFrac": 0.2,
+      "padKickMps": 22,
+      "kinds": [
+        {
+          "halfM": 22,
+          "top": 40,
+          "e": 1.05,
+          "tiltDeg": 10,
+          "boxHalfM": 14.5,
+          "boxBottomM": 0
+        },
+        {
+          "halfM": 22,
+          "top": 42,
+          "e": 1.22,
+          "tiltDeg": 18,
+          "boxHalfM": 14.6,
+          "boxBottomM": 32
+        },
+        {
+          "halfM": 14,
+          "top": 50,
+          "e": 0.95,
+          "tiltDeg": 6,
+          "boxHalfM": 9,
+          "boxBottomM": 0
+        },
+        {
+          "halfM": 27,
+          "top": 38,
+          "e": 1.15,
+          "tiltDeg": 14,
+          "boxHalfM": 19,
+          "boxBottomM": 22
+        },
+        {
+          "halfM": 26,
+          "top": 38,
+          "e": 1.1,
+          "tiltDeg": 20,
+          "boxHalfM": 18,
+          "boxBottomM": 24
+        },
+        {
+          "halfM": 32,
+          "top": 25,
+          "e": 1.0,
+          "tiltDeg": 5,
+          "boxHalfM": 24,
+          "boxBottomM": 0
+        },
+        {
+          "halfM": 36,
+          "top": 38,
+          "e": 1.12,
+          "tiltDeg": 12,
+          "boxHalfM": 28,
+          "boxBottomM": 0
+        }
+      ],
+      "padSpeedGain": 0.15,
+      "sideRestitution": 0.55,
+      "sideMu": 0.3,
+      "poleHalfM": 2.5
+    },
+    "relaunch": {
+      "mps": 46,
+      "stepMps": 3,
+      "angleDeg": 55,
+      "spinRadS": 1.2
+    },
+    "airBoost": {
+      "minVx": 6,
+      "maxVx": 30,
+      "minVy": 3,
+      "maxVy": 22,
+      "optimalAngleDeg": 50,
+      "perfectMinMps": 66,
+      "perfectGainMps": 30,
+      "perfectSpinKeep": 0.25
+    },
+    "tail": {
+      "nodes": 4,
+      "segM": 10,
+      "damp": 0.985,
+      "iterations": 4
+    },
+    "pickups": {
+      "count": 60,
+      "firstX": 230,
+      "gapM": 135,
+      "radius": 9,
+      "heights": [
+        45,
+        18,
+        72,
+        26,
+        58,
+        20,
+        84,
+        32
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "worksheet",
+      "title": "OSI Model & Layer 8 Challenge (worksheet supplied by the project owner)",
+      "url": "",
+      "section": "Questions 1-8",
+      "claim": "Source of the eight questions and their wording.",
+      "reviewPending": true,
+      "reviewed": false
+    },
+    {
+      "id": "gfg-l1",
+      "title": "GeeksforGeeks - Layers of the OSI Model",
+      "url": "https://www.geeksforgeeks.org/computer-networks/open-systems-interconnection-model-osi/",
+      "section": "Layer 1 - Physical Layer",
+      "claim": "The Physical layer transmits raw bit streams over a physical medium.",
+      "reviewed": false
+    },
+    {
+      "id": "gfg-l2",
+      "title": "GeeksforGeeks - Layers of the OSI Model",
+      "url": "https://www.geeksforgeeks.org/computer-networks/open-systems-interconnection-model-osi/",
+      "section": "Layer 2 - Data Link Layer",
+      "claim": "The Data Link layer exchanges frames between nodes on the same link using MAC addresses.",
+      "reviewed": false
+    },
+    {
+      "id": "gfg-l3",
+      "title": "GeeksforGeeks - Layers of the OSI Model",
+      "url": "https://www.geeksforgeeks.org/computer-networks/open-systems-interconnection-model-osi/",
+      "section": "Layer 3 - Network Layer",
+      "claim": "The Network layer handles logical (IP) addressing and routing of packets between networks.",
+      "reviewed": false
+    },
+    {
+      "id": "gfg-l4",
+      "title": "GeeksforGeeks - Layers of the OSI Model",
+      "url": "https://www.geeksforgeeks.org/computer-networks/open-systems-interconnection-model-osi/",
+      "section": "Layer 4 - Transport Layer",
+      "claim": "The Transport layer provides end-to-end delivery, segmentation, and reassembly.",
+      "reviewed": false
+    },
+    {
+      "id": "gfg-l5",
+      "title": "GeeksforGeeks - Layers of the OSI Model",
+      "url": "https://www.geeksforgeeks.org/computer-networks/open-systems-interconnection-model-osi/",
+      "section": "Layer 5 - Session Layer",
+      "claim": "The Session layer establishes, maintains, and terminates sessions between applications.",
+      "reviewed": false
+    },
+    {
+      "id": "gfg-l6",
+      "title": "GeeksforGeeks - Layers of the OSI Model",
+      "url": "https://www.geeksforgeeks.org/computer-networks/open-systems-interconnection-model-osi/",
+      "section": "Layer 6 - Presentation Layer",
+      "claim": "The Presentation layer translates data into a common format (encoding, compression, encryption).",
+      "reviewed": false
+    },
+    {
+      "id": "gfg-l7",
+      "title": "GeeksforGeeks - Layers of the OSI Model",
+      "url": "https://www.geeksforgeeks.org/computer-networks/open-systems-interconnection-model-osi/",
+      "section": "Layer 7 - Application Layer",
+      "claim": "The Application layer is associated with protocols such as HTTP, SMTP, and DNS.",
+      "reviewed": false
+    },
+    {
+      "id": "cisco-osi",
+      "title": "Cisco Press - Network Communication Models",
+      "url": "https://www-stg.ciscopress.com/articles/article.asp?p=3131360&seqNum=6",
+      "section": "Tables 5-3 and 5-4",
+      "claim": "Independent check of the layer assignments above.",
+      "reviewed": false
+    },
+    {
+      "id": "layer8-pending",
+      "title": "Layer 8 (informal) - source still to be chosen",
+      "url": "",
+      "section": "n/a",
+      "claim": "Informal joke layer for people and politics; not part of the OSI model.",
+      "reviewPending": true,
+      "reviewed": false
+    }
+  ],
+  "rounds": [
+    {
+      "id": "q1",
+      "layer": 1,
+      "prompt": "Which of the following devices operates primarily at Layer 1 (Physical Layer) of the OSI model, dealing directly with raw electrical, optical, or radio signals?",
+      "choices": [
+        {
+          "id": "a",
+          "label": "Router",
+          "why": "A router works at Layer 3: it forwards packets using IP addresses."
+        },
+        {
+          "id": "b",
+          "label": "Hub",
+          "why": "A hub repeats raw electrical signals out of every port without reading addresses or frames. That is Layer 1."
+        },
+        {
+          "id": "c",
+          "label": "Unmanaged Switch",
+          "why": "A switch reads the MAC address in each frame. That is Layer 2."
+        },
+        {
+          "id": "d",
+          "label": "Firewall",
+          "why": "A firewall inspects packets and sessions, which is Layer 3 and above."
+        }
+      ],
+      "rule": {
+        "correctChoice": "b",
+        "sourceId": "gfg-l1",
+        "explanation": "A hub only repeats signals, so it is a Layer 1 (Physical) device."
+      }
+    },
+    {
+      "id": "q2",
+      "layer": 2,
+      "prompt": "What is the primary data unit and core addressing mechanism used at Layer 2 (Data Link Layer) of the OSI model?",
+      "choices": [
+        {
+          "id": "a",
+          "label": "Packets and IP addresses",
+          "why": "Packets and IP addresses belong to Layer 3 (Network)."
+        },
+        {
+          "id": "b",
+          "label": "Segments and Port numbers",
+          "why": "Segments and port numbers belong to Layer 4 (Transport)."
+        },
+        {
+          "id": "c",
+          "label": "Frames and MAC addresses",
+          "why": "Layer 2 sends frames between devices on the same link, addressed with MAC addresses."
+        },
+        {
+          "id": "d",
+          "label": "Bits and voltages",
+          "why": "Bits and voltages are Layer 1 (Physical)."
+        }
+      ],
+      "rule": {
+        "correctChoice": "c",
+        "sourceId": "gfg-l2",
+        "explanation": "Layer 2 (Data Link) uses frames and MAC addresses."
+      }
+    },
+    {
+      "id": "q3",
+      "layer": 3,
+      "prompt": "Which networking device is most famously associated with Layer 3 (Network Layer) because it routes traffic across different networks using logical addresses?",
+      "choices": [
+        {
+          "id": "a",
+          "label": "Network Hub",
+          "why": "A hub is a Layer 1 device; it does not route."
+        },
+        {
+          "id": "b",
+          "label": "Router",
+          "why": "A router forwards packets between networks using logical (IP) addresses. That is Layer 3."
+        },
+        {
+          "id": "c",
+          "label": "Repeater",
+          "why": "A repeater regenerates signals, which is Layer 1."
+        },
+        {
+          "id": "d",
+          "label": "Network Interface Card (NIC) in Promiscuous Mode",
+          "why": "A NIC works at Layers 1 and 2; promiscuous mode only lets it accept every frame it sees. It does not route."
+        }
+      ],
+      "rule": {
+        "correctChoice": "b",
+        "sourceId": "gfg-l3",
+        "explanation": "Routers use logical addresses to move packets between networks: Layer 3."
+      }
+    },
+    {
+      "id": "q4",
+      "layer": 4,
+      "prompt": "Which of the following protocols operates at Layer 4 (Transport Layer) and provides reliable, connection-oriented data transmission using a three-way handshake?",
+      "choices": [
+        {
+          "id": "a",
+          "label": "UDP (User Datagram Protocol)",
+          "why": "UDP is also Layer 4, but it is connectionless: no handshake and no delivery guarantee."
+        },
+        {
+          "id": "b",
+          "label": "IP (Internet Protocol)",
+          "why": "IP is Layer 3 (Network)."
+        },
+        {
+          "id": "c",
+          "label": "HTTP (Hypertext Transfer Protocol)",
+          "why": "HTTP is Layer 7 (Application)."
+        },
+        {
+          "id": "d",
+          "label": "TCP (Transmission Control Protocol)",
+          "why": "TCP is a Layer 4 protocol that opens connections with a three-way handshake and delivers data reliably."
+        }
+      ],
+      "rule": {
+        "correctChoice": "d",
+        "sourceId": "gfg-l4",
+        "explanation": "TCP is the reliable, connection-oriented Layer 4 protocol."
+      }
+    },
+    {
+      "id": "q5",
+      "layer": 5,
+      "prompt": "What is the primary role of Layer 5 (Session Layer) in the OSI model?",
+      "choices": [
+        {
+          "id": "a",
+          "label": "Translating character encodings and handling data compression",
+          "why": "Encoding and compression are Layer 6 (Presentation)."
+        },
+        {
+          "id": "b",
+          "label": "Establishing, managing, and terminating communication dialogues between applications",
+          "why": "The Session layer sets up, maintains, and ends the dialogue between applications."
+        },
+        {
+          "id": "c",
+          "label": "Managing end-to-end flow control and port multiplexing",
+          "why": "Flow control and ports are Layer 4 (Transport)."
+        },
+        {
+          "id": "d",
+          "label": "Providing a direct graphical user interface to end users",
+          "why": "A user interface belongs to the application itself (Layer 7 at most), not the Session layer."
+        }
+      ],
+      "rule": {
+        "correctChoice": "b",
+        "sourceId": "gfg-l5",
+        "explanation": "Layer 5 (Session) establishes, manages, and terminates sessions."
+      }
+    },
+    {
+      "id": "q6",
+      "layer": 6,
+      "prompt": "Which of the following functions is typically handled at Layer 6 (Presentation Layer) of the OSI model?",
+      "choices": [
+        {
+          "id": "a",
+          "label": "Data translation, encryption/decryption, and compression",
+          "why": "Layer 6 makes sure both ends agree on data format: translation, encryption, and compression."
+        },
+        {
+          "id": "b",
+          "label": "Path selection and packet forwarding across routers",
+          "why": "Path selection and forwarding are Layer 3 (Network)."
+        },
+        {
+          "id": "c",
+          "label": "Establishing TCP socket connections",
+          "why": "TCP connections are Layer 4 (Transport)."
+        },
+        {
+          "id": "d",
+          "label": "Web browser rendering of HTML/CSS",
+          "why": "Rendering a page is done by the application (Layer 7)."
+        }
+      ],
+      "rule": {
+        "correctChoice": "a",
+        "sourceId": "gfg-l6",
+        "explanation": "Layer 6 (Presentation) handles translation, encryption, and compression."
+      }
+    },
+    {
+      "id": "q7",
+      "layer": 7,
+      "prompt": "Which of the following protocols operates directly at Layer 7 (Application Layer) of the OSI model?",
+      "choices": [
+        {
+          "id": "a",
+          "label": "TCP",
+          "why": "TCP is Layer 4 (Transport)."
+        },
+        {
+          "id": "b",
+          "label": "IPv4",
+          "why": "IPv4 is Layer 3 (Network)."
+        },
+        {
+          "id": "c",
+          "label": "Ethernet",
+          "why": "Ethernet covers Layers 1 and 2 (Physical and Data Link)."
+        },
+        {
+          "id": "d",
+          "label": "HTTP",
+          "why": "HTTP is an application protocol: Layer 7."
+        }
+      ],
+      "rule": {
+        "correctChoice": "d",
+        "sourceId": "gfg-l7",
+        "explanation": "HTTP is a Layer 7 (Application) protocol."
+      }
+    }
+  ],
+  "boss": {
+    "id": "boss-l8",
+    "layer": 8,
+    "prompt": "In IT humor and network troubleshooting folklore, what does \"Layer 8\" of the OSI model refer to?",
+    "choices": [
+      {
+        "id": "a",
+        "label": "The cloud service provider or ISP gateway",
+        "why": "A provider gateway is real equipment, not the joke layer."
+      },
+      {
+        "id": "b",
+        "label": "The uninterruptible power supply (UPS) in the server room",
+        "why": "A UPS is power equipment; the joke is not about hardware."
+      },
+      {
+        "id": "c",
+        "label": "The human user, end-to-end management, or office politics",
+        "why": "Layer 8 is the informal joke layer for people and politics. It is not part of the OSI model."
+      },
+      {
+        "id": "d",
+        "label": "The physical fiber-optic cable buried underground",
+        "why": "Cabling is Layer 1."
+      }
+    ],
+    "rule": {
+      "correctChoice": "c",
+      "sourceId": "layer8-pending",
+      "explanation": "Layer 8 is an informal joke: the people and politics above the seven real layers."
+    },
+    "informal": true,
+    "title": "Layer 8 boss (informal - not part of the OSI model)"
+  }
+}
