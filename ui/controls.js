@@ -1,4 +1,5 @@
 // Input events, keyboard/focus behavior, and the animation-frame loop.
+import { createQualityMonitor } from './device.js';
 import { buildHud, updateHud, updateStage, renderMain, updateDynamic, setSceneAnimation } from './render.js';
 
 export function mountGame({ game, hudRoot, mainRoot, liveRoot, confirmFn = (m) => window.confirm(m), env = {} }) {
@@ -72,17 +73,14 @@ export function mountGame({ game, hudRoot, mainRoot, liveRoot, confirmFn = (m) =
   });
 
   // Frame-rate meter (?fps=1) and automatic lighter quality when the frame rate stays low (FR-050).
-  const stamps = []; let worstMs = 0; let lowMs = 0; let shownAt = 0; let meter = null;
+  const monitor = createQualityMonitor(); let shownAt = 0; let meter = null;
   if (env.fps && typeof document !== 'undefined') { meter = document.createElement('div'); meter.id = 'fps'; meter.setAttribute('aria-hidden', 'true'); document.body.append(meter); }
   function noteFrame(now, dt, flying) {
-    stamps.push(now); while (stamps.length && now - stamps[0] > 1000) stamps.shift();
-    worstMs = Math.max(worstMs * 0.98, dt);
-    const fps = stamps.length;
     const root = typeof document !== 'undefined' ? document.documentElement : null;
     if (!root || !root.dataset) return;
-    if (meter && now - shownAt > 250) { shownAt = now; meter.textContent = `${fps} fps, worst ${Math.round(worstMs)} ms, quality ${root.dataset.quality || 'high'}, ${env.format || '?'} / ${env.browser || '?'}`; }
-    if (flying && fps < 40 && stamps.length > 5 && now - stamps[0] > 900) lowMs += dt; else lowMs = Math.max(0, lowMs - dt);
-    if (lowMs > 3000 && !root.dataset.quality) {
+    const m = monitor.note(now, dt, flying);
+    if (meter && now - shownAt > 250) { shownAt = now; meter.textContent = `${m.fps} fps, worst ${Math.round(m.worstMs)} ms, quality ${root.dataset.quality || 'high'}, ${env.format || '?'} / ${env.browser || '?'}`; }
+    if (m.low && !root.dataset.quality) {
       root.dataset.quality = 'low';
       const note = document.getElementById('quality-note'); if (note) note.textContent = 'Quality: low (automatic, frame rate was low)';
     }

@@ -1,6 +1,6 @@
 // Optional: node tests/run-node.mjs (Node 18+). The browser runner (tests/index.html) is the primary path.
 import { runAll } from './harness.js';
-import './content.test.js'; import './rules.test.js'; import './sim.test.js'; import './state.test.js'; import './device.test.js';
+import './content.test.js'; import './rules.test.js'; import './sim.test.js'; import './state.test.js'; import './device.test.js'; import './serve.test.js';
 const r = await runAll();
 if (r.noTests) { console.error('FAIL: zero tests discovered'); process.exit(1); }
 console.log(`${r.passed} / ${r.total} passed, ${r.failed.length} failed`);

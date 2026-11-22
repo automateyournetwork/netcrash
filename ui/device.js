@@ -37,3 +37,28 @@ export function detectEnvironment(win = window) {
   });
   return { ...info, browser: browserFamily(nav.userAgent || ''), coarse, quality: q.get('quality') || '', fps: q.get('fps') !== null };
 }
+
+// Scene size for a container: landscape keeps height 400 and widens (430..1000); portrait (mobile format)
+// keeps width 420 and grows taller (420..900). `vy` keeps the ground at y = 400 (FR-045).
+export function sceneSize(W, H, baseH = 400) {
+  if (!(W > 0) || !(H > 0)) return { w: 700, h: baseH, vy: 0, portrait: false };
+  if (W >= H * 0.95) return { w: Math.round(Math.min(1000, Math.max(430, (baseH * W) / H))), h: baseH, vy: 0, portrait: false };
+  const h = Math.round(Math.min(900, Math.max(420, (420 * H) / W)));
+  return { w: 420, h, vy: baseH - h, portrait: true };
+}
+
+// Frame-rate meter and automatic lower quality (FR-050): average fps over the last second, worst frame,
+// and `low` once the rate has stayed under `lowFps` for `afterMs` of flight.
+export function createQualityMonitor({ lowFps = 40, afterMs = 3000 } = {}) {
+  const stamps = []; let worst = 0; let lowFor = 0; let low = false;
+  return {
+    note(now, frameMs, flying) {
+      stamps.push(now); while (stamps.length && now - stamps[0] > 1000) stamps.shift();
+      worst = Math.max(worst * 0.98, frameMs);
+      const fps = stamps.length;
+      if (flying && fps < lowFps && stamps.length > 5 && now - stamps[0] > 900) lowFor += frameMs; else lowFor = Math.max(0, lowFor - frameMs);
+      if (lowFor > afterMs) low = true;
+      return { fps, worstMs: worst, low };
+    }
+  };
+}

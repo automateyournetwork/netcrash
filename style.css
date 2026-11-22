@@ -112,3 +112,12 @@ html[data-quality="low"] #ly-clouds, html[data-quality="low"] #ly-far { display:
 html[data-quality="low"] svg { shape-rendering: optimizeSpeed; text-rendering: optimizeSpeed; }
 html[data-format="mobile"] .panel.bar > p:not(.boost-state):not(.aim-readout) { display: none; }
 html[data-format="mobile"] .panel.bar .aim-readout { display: inline-block; margin: 0 10px 0 0; }
+
+/* ---- Single action button above the dial; instruction panels hidden during aiming and flight (FR-051) ---- */
+.panel.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; background: none; }
+.stage .action { position: absolute; z-index: 6; transform: translate(-50%, -50%); min-width: 132px; min-height: 52px; padding: 10px 26px; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.04em; color: #0b1a2e; background: #f2b134; border: 3px solid #0b1a2e; border-radius: 999px; box-shadow: 0 3px 0 #0b1a2e, 0 6px 14px rgba(0, 0, 0, 0.35); cursor: pointer; touch-action: manipulation; }
+.stage .action:hover:not(:disabled) { background: #ffc94d; }
+.stage .action:active { transform: translate(-50%, calc(-50% + 2px)); box-shadow: 0 1px 0 #0b1a2e; }
+.stage .action.off { background: #9aa3b5; box-shadow: 0 3px 0 #0b1a2e; }
+
+.stage .action { width: auto !important; max-width: 60%; flex: none; }

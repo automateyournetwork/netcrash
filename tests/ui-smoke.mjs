@@ -56,9 +56,11 @@ const radios = () => { let n = 0; mainRoot.walk((e) => { if (e.tagName === 'INPU
 check('briefing shown first with a standing character, how-to-play text and a Launch button', text().includes('get ready to crash') && text().includes('Joke alert') && !!el('character') && !!byAction('start'));
 check('HUD labels present', hudRoot.textContent.includes('Distance') && hudRoot.textContent.includes('Speed') && hudRoot.textContent.includes('Energy'));
 check('no hint or worked-solution controls anywhere', !byAction('hint') && !byAction('worked') && !/worked solution|hint/i.test(text() + hudRoot.textContent));
-check('nothing moves in the briefing', phase() === 'briefing' && game.view().sim.x === 0 && el('launcher-wrap').getAttribute('visibility') === 'hidden');
+check('briefing: the angry-bull Catalyst 6500 is already there, standing by the character', phase() === 'briefing' && game.view().sim.x === 0 && el('launcher-wrap').getAttribute('visibility') === 'visible' && ['bull-legF', 'bull-legB', 'bull-armF', 'bull-armB', 'bull-face', 'bull-mouth', 'bull-brow-L', 'bull-eye-R'].every((i) => !!el(i)));
+const paw0 = el('bull-body').getAttribute('transform'); frames(4);
+check('the bull animates while idle (paws the ground, snorts)', el('bull-body').getAttribute('transform') !== paw0 && Number(el('bull-steam-0').getAttribute('opacity')) >= 0);
 frames(10);
-check('briefing: character stays on the ground, no launcher yet', game.view().sim.x === 0 && el('launcher-wrap').getAttribute('visibility') === 'hidden');
+check('briefing: character stays on the ground', game.view().sim.x === 0);
 
 click('start');
 const vis = (id) => el(id).getAttribute('visibility') === 'visible';
@@ -74,9 +76,10 @@ const a0 = el('dial-angle-needle').getAttribute('transform'); frames(6);
 check('angle needle moves; angle readout in degrees', el('dial-angle-needle').getAttribute('transform') !== a0 && /^Angle: \d+\u00B0$/.test(el('an-val').textContent), el('an-val').textContent);
 check('aim arrow is visible while choosing the angle', el('aim').getAttribute('visibility') === 'visible');
 click('lock');
-check('launching: Catalyst 6500 streaks in before anything moves', phase() === 'launching' && el('launcher-wrap').getAttribute('visibility') === 'visible' && game.view().sim.x === 0);
-const lx0 = el('launcher-wrap').getAttribute('transform'); frames(3);
-check('the Catalyst moves toward the character', el('launcher-wrap').getAttribute('transform') !== lx0, lx0);
+check('launching: the Catalyst winds up before anything moves, with a furious face', phase() === 'launching' && el('launcher-wrap').getAttribute('visibility') === 'visible' && game.view().sim.x === 0);
+frames(3);
+const lx0 = el('launcher-wrap').getAttribute('transform'); frames(10);
+check('the bull charges toward the character (legs pumping)', el('launcher-wrap').getAttribute('transform') !== lx0 && el('bull-mouth').getAttribute('d').startsWith('M-12 -64'), el('bull-mouth').getAttribute('d'));
 until(() => phase() === 'flying');
 check('impact launches the character: flying with a Boost control', text().includes('Flying') && !!byAction('boost') && game.view().sim.status === 'running');
 check('Boosts are limited to 3 at the start and shown as text and on the dial', hud('hud-boosts') === '3 left' && /3 left/.test(el('dial-boost-sub').textContent), hud('hud-boosts'));
@@ -135,7 +138,10 @@ check('correct -> feedback + Next, score 1', fb().includes('Correct') && !!byAct
 check('celebrate mood text', el('mood').textContent.includes('Celebrating'));
 check('face is happy after a correct answer', el('mouth').getAttribute('d').startsWith('M-6 6.5 Q0 15'), el('mouth').getAttribute('d'));
 click('next');
-check('resumed flying after the power-up relaunch', text().includes('Flying') && game.view().sim.status === 'running');
+check('after a correct answer the power dial pops up again (power-up), no flight yet', phase() === 'aim-power' && text().includes('Power up') && vis('dial-power') && !!byAction('lock') && game.view().sim.status === 'paused');
+click('lock'); check('then the angle dial again', phase() === 'aim-angle' && vis('dial-angle')); click('lock');
+until(() => phase() === 'flying');
+check('relaunched with the chosen values: flying again', text().includes('Flying') && game.view().sim.status === 'running');
 
 // play Layers 2..7 using the keys; Assist is on from the launch
 fire('change', (() => { let f; hudRoot.walk((e) => { if (e.attrs.id === 'assist-toggle') f = e; }); return f; })());
@@ -147,6 +153,7 @@ for (let layer = 2; layer <= 7; layer++) {
   pick(keyByLayer[layer]); click('submit');
   check(`layer ${layer} correct`, fb().includes('Correct'), fb());
   click('next');
+  if (layer < 7) { click('lock'); click('lock'); until(() => phase() === 'flying'); } // power-up: aim again; after Layer 7 the boss follows
 }
 until(() => phase() === 'boss', 60000);
 check('boss screen shown, labeled informal, four options', text().includes('informal') && radios() === 4);

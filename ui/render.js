@@ -1,5 +1,6 @@
 // DOM rendering. Content is set with textContent only (no innerHTML).
 import { formatSpeed, gaugeValue, boostQuality } from '../engine/sim.js';
+import { sceneSize } from './device.js';
 
 export function h(tag, attrs, ...children) {
   const el = document.createElement(tag);
@@ -107,11 +108,84 @@ function landmark(slot) {
   return grp({ class: 'landmark' }, k);
 }
 
-function launcher() { // Catalyst 6500: tall chassis with a ram plate
-  const k = [mk('rect', { x: -40, y: -96, width: 80, height: 96, rx: 4, fill: '#1c4f8f', stroke: '#0a1d35', 'stroke-width': 3 })];
-  for (let i = 0; i < 6; i++) { k.push(mk('rect', { x: -34, y: -90 + i * 15, width: 68, height: 11, fill: '#0d2b50' })); for (let j = 0; j < 9; j++) k.push(mk('rect', { x: -31 + j * 7.4, y: -87 + i * 15, width: 5, height: 5, fill: '#7fb4f0' })); }
-  k.push(mk('rect', { x: 40, y: -62, width: 18, height: 30, rx: 3, fill: '#c9d2e0', stroke: '#222', 'stroke-width': 2 }));
-  return grp({ id: 'launcher' }, k, mk('text', { x: 0, y: 16, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: '#fff', stroke: '#123', 'stroke-width': 3, 'paint-order': 'stroke' }, 'Catalyst 6500'));
+// Catalyst 6500 as an angry bull (FR-052): chassis body, horns, arms, legs, an emoting face and steam.
+// Origin = the ground under its feet; it faces right. Animated by updateBull().
+function launcher() {
+  const ink = '#0a1d35';
+  const limb = (id, x, y, w, h, fill) => grp({ id, transform: `translate(${x} ${y})` }, mk('rect', { x: -w / 2, y: 0, width: w, height: h, rx: 3, fill, stroke: ink, 'stroke-width': 2.2 }));
+  const legF = limb('bull-legF', 15, -40, 11, 36, '#16427a'); legF.append(mk('rect', { x: -7, y: 32, width: 20, height: 8, rx: 3, fill: '#0d2b50', stroke: ink, 'stroke-width': 2 }));
+  const legB = limb('bull-legB', -15, -40, 11, 36, '#16427a'); legB.append(mk('rect', { x: -7, y: 32, width: 20, height: 8, rx: 3, fill: '#0d2b50', stroke: ink, 'stroke-width': 2 }));
+  const armF = limb('bull-armF', 31, -70, 9, 32, '#c9d2e0'); armF.append(mk('circle', { cx: 0, cy: 34, r: 7, fill: '#e6ebf3', stroke: ink, 'stroke-width': 2 }));
+  const armB = limb('bull-armB', -31, -70, 9, 32, '#c9d2e0'); armB.append(mk('circle', { cx: 0, cy: 34, r: 7, fill: '#e6ebf3', stroke: ink, 'stroke-width': 2 }));
+  const chassis = [mk('rect', { x: -32, y: -96, width: 64, height: 64, rx: 6, fill: '#1c4f8f', stroke: ink, 'stroke-width': 3 })];
+  for (let i = 0; i < 2; i++) chassis.push(mk('rect', { x: -26, y: -52 + i * 9, width: 52, height: 6, fill: '#0d2b50' }));
+  for (let j = 0; j < 8; j++) chassis.push(mk('rect', { x: -23 + j * 6.2, y: -51, width: 3.6, height: 3.6, fill: j % 3 ? '#7fb4f0' : '#3fe06b' }));
+  const horn = (s) => mk('path', { d: `M${s * 22} -94 Q${s * 40} -98 ${s * 38} -118 Q${s * 28} -104 ${s * 12} -94 Z`, fill: '#f2e6c4', stroke: ink, 'stroke-width': 2.5, 'stroke-linejoin': 'round' });
+  const eye = (side) => { const id = side < 0 ? 'L' : 'R'; return [
+    mk('ellipse', { id: `bull-eye-${id}`, cx: side * 10, cy: -79, rx: 6.5, ry: 5.5, fill: '#fff', stroke: ink, 'stroke-width': 1.8 }),
+    mk('circle', { id: `bull-pupil-${id}`, cx: side * 10 + 1.5, cy: -79, r: 2.6, fill: '#2b3550' }),
+    mk('path', { id: `bull-brow-${id}`, d: '', stroke: ink, 'stroke-width': 3.6, 'stroke-linecap': 'round', fill: 'none' })]; };
+  const face = grp({ id: 'bull-face' }, mk('rect', { x: -22, y: -91, width: 44, height: 36, rx: 8, fill: '#2f72c4', stroke: ink, 'stroke-width': 2 }), ...eye(-1), ...eye(1),
+    mk('ellipse', { cx: -5, cy: -67, rx: 2, ry: 2.6, fill: ink }), mk('ellipse', { cx: 5, cy: -67, rx: 2, ry: 2.6, fill: ink }),
+    mk('path', { id: 'bull-mouth', d: '', stroke: ink, 'stroke-width': 2.4, fill: 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  const steam = grp({ id: 'bull-steam' }); for (let i = 0; i < 3; i++) steam.append(mk('circle', { id: `bull-steam-${i}`, cx: 0, cy: 0, r: 7, fill: '#fff', opacity: 0, stroke: '#cfd8e6', 'stroke-width': 1.5 }));
+  const body = grp({ id: 'bull-body' }, legB, armB, grp({}, ...chassis), horn(-1), horn(1), face, mk('text', { x: 0, y: -37, 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 800, fill: '#cfe9ff' }, 'Catalyst 6500'), legF, armF);
+  return grp({ id: 'launcher' }, body, steam);
+}
+
+const BULL_FACES = {
+  angry: { browL: 'M-17 -90 L-4 -84', browR: 'M4 -84 L17 -90', ry: 5.5, pupil: '#2b3550', mouth: 'M-11 -62 L-7 -65 L-3 -62 L1 -65 L5 -62 L9 -65 L12 -62', fill: 'none', lookY: 0 },
+  furious: { browL: 'M-18 -93 L-2 -82', browR: 'M2 -82 L18 -93', ry: 3.6, pupil: '#c40000', mouth: 'M-12 -64 Q0 -52 12 -64 Z', fill: '#fff', lookY: 0 },
+  smug: { browL: 'M-17 -86 L-4 -86', browR: 'M4 -89 L17 -93', ry: 3.8, pupil: '#2b3550', mouth: 'M-9 -63 Q3 -58 12 -68', fill: 'none', lookY: 1 }
+};
+const bullFace = { key: '' };
+function applyBullFace(name) {
+  if (bullFace.key === name) return; bullFace.key = name;
+  const $ = (id) => document.getElementById(id); const f = BULL_FACES[name] || BULL_FACES.angry;
+  for (const id of ['L', 'R']) { const e = $(`bull-eye-${id}`); if (!e) return; e.setAttribute('ry', f.ry); const p = $(`bull-pupil-${id}`); p.setAttribute('fill', f.pupil); p.setAttribute('cy', -79 + f.lookY); $(`bull-brow-${id}`).setAttribute('d', id === 'L' ? f.browL : f.browR); }
+  const m = $('bull-mouth'); m.setAttribute('d', f.mouth); m.setAttribute('fill', f.fill);
+}
+
+// Angry-bull behaviour: paws and snorts while the player aims, winds up and charges when the launch is locked,
+// rams the plug, then stands smug (FR-052). Returns the screen x of the bull, or null when it is hidden.
+function updateBull(v, now, still, d) {
+  const sc = SCENE; const $ = (id) => document.getElementById(id);
+  const impactMs = v.config.launch.impactMs; const lm = v.launchMs;
+  const hitX = chX() - 70; const idleX = Math.max(74, chX() - 210);
+  const launching = v.phase === 'launching' && !v.aim.relaunch; const before = v.phase === 'briefing' || v.phase === 'aim-power' || v.phase === 'aim-angle' || launching;
+  const afterHit = !before && v.sim.answersCorrect >= 0 && lm >= impactMs;
+  let x = null; let mode = 'idle';
+  if (before) {
+    if (launching) {
+      const t = Math.min(1, lm / impactMs); const wind = 0.3;
+      if (t < wind) { x = idleX; mode = 'windup'; } else { const u = (t - wind) / (1 - wind); x = idleX + (hitX - idleX) * u * u; mode = 'charge'; }
+    } else x = idleX;
+  } else if (afterHit && !still && v.sim.phase !== 'glide') { x = chX() + ((hitX - chX()) / sc.pxPerM - d) * sc.pxPerM; mode = 'smug'; }
+  const g = $('launcher-wrap');
+  if (x === null || x < -120 || (still && mode !== 'idle')) { g.setAttribute('visibility', 'hidden'); return null; }
+  g.setAttribute('visibility', 'visible'); g.setAttribute('transform', `translate(${x.toFixed(1)} ${sc.groundPx}) scale(1.05)`);
+  const t = still ? 0 : now;
+  const set = (id, tr) => $(id).setAttribute('transform', tr);
+  let lean = 0; let legF = 0; let legB = 0; let armF = 0; let armB = 0; let bob = 0; let steam = 0; let steamDir = 1;
+  if (mode === 'idle') {
+    bob = Math.sin(t / 330) * 1.2; lean = 2 + Math.sin(t / 330) * 1.2; steam = 0.7;
+    const cyc = (t % 1100) / 1100; legF = cyc < 0.35 ? -40 * Math.sin((cyc / 0.35) * Math.PI) : 0; // paws the ground
+    armF = 10 + Math.sin(t / 330) * 5; armB = -10;
+  } else if (mode === 'windup') {
+    bob = 3; lean = -7; legF = -35 * Math.abs(Math.sin(t / 70)); armF = 40; armB = 30; steam = 1; steamDir = 1;
+  } else if (mode === 'charge') {
+    lean = 12; legF = Math.sin(t / 55) * 55; legB = -Math.sin(t / 55) * 55; armF = -70; armB = -60; bob = Math.abs(Math.sin(t / 55)) * -3; steam = 1; steamDir = -1;
+  } else { lean = 1; bob = Math.sin(t / 500) * 0.8; armF = 25; armB = -25; steam = 0; }
+  set('bull-body', `translate(0 ${bob.toFixed(1)}) rotate(${lean.toFixed(1)} 0 -4)`);
+  set('bull-legF', `translate(15 -40) rotate(${legF.toFixed(1)})`); set('bull-legB', `translate(-15 -40) rotate(${legB.toFixed(1)})`);
+  set('bull-armF', `translate(31 -70) rotate(${armF.toFixed(1)})`); set('bull-armB', `translate(-31 -70) rotate(${armB.toFixed(1)})`);
+  for (let i = 0; i < 3; i++) {
+    const c = $(`bull-steam-${i}`); const ph = ((t / 700 + i / 3) % 1);
+    const sx = steamDir > 0 ? 8 + ph * 26 : -34 - ph * 34; const sy = -66 - ph * 24;
+    c.setAttribute('cx', sx.toFixed(1)); c.setAttribute('cy', sy.toFixed(1)); c.setAttribute('r', (4 + ph * 8).toFixed(1)); c.setAttribute('opacity', (steam * (1 - ph) * 0.85).toFixed(2));
+  }
+  applyBullFace(mode === 'charge' || mode === 'windup' ? 'furious' : mode === 'smug' ? 'smug' : 'angry');
+  return x;
 }
 
 // The flying "character": an RJ45 plug. Local origin = center of gravity. The face (eyes with sclera,
@@ -191,16 +265,11 @@ function applyFace(emotion, lookX, lookY, blink) {
 const view = { w: 700, h: 400, vy: 0 };
 function measure() {
   const m = typeof document !== 'undefined' ? document.getElementById('main') : null;
-  if (m && m.clientWidth && m.clientHeight) {
-    const W = m.clientWidth; const H = m.clientHeight;
-    if (W >= H * 0.95) { view.h = SCENE.h; view.w = Math.round(Math.min(1000, Math.max(430, (SCENE.h * W) / H))); } // landscape
-    else { view.w = 420; view.h = Math.round(Math.min(900, Math.max(420, (420 * H) / W))); } // portrait (mobile format)
-    view.vy = SCENE.h - view.h; // the ground stays at y = 400; extra height is sky above
-  }
+  if (m && m.clientWidth && m.clientHeight) { const z = sceneSize(m.clientWidth, m.clientHeight, SCENE.h); view.w = z.w; view.h = z.h; view.vy = z.vy; }
   return view.w;
 }
 const viewBox = () => `0 ${view.vy} ${view.w} ${view.h}`;
-const chX = () => Math.round(view.w * 0.3);
+const chX = () => Math.round(view.w * (view.h > SCENE.h ? 0.42 : 0.3));
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('resize', () => { measure(); const svg = document.getElementById('scene-svg'); if (svg) svg.setAttribute('viewBox', viewBox()); });
 }
@@ -288,8 +357,13 @@ function stage(v) {
       h('div', { class: 'hud-line' }, h('span', { class: 'hud-lbl red', text: 'BOUNCES' }), h('span', { id: 'ov-next', class: 'hud-num red' })),
       h('div', { class: 'hud-line' }, h('span', { class: 'hud-lbl', text: 'SPEED' }), h('span', { id: 'ov-speed', class: 'hud-num sm' }))));
 
+  // One action button above the dial: Lock while aiming, Boost while flying (FR-051).
+  const aiming = v.phase === 'aim-power' || v.phase === 'aim-angle';
+  const flying = v.phase === 'flying' || v.phase === 'glide';
+  const action = aiming ? h('button', { type: 'button', id: 'lock-btn', class: 'action', 'data-action': 'lock', text: 'Lock' })
+    : flying ? h('button', { type: 'button', id: 'boost-btn', class: 'action', 'data-action': 'boost', text: 'Boost' }) : '';
   return h('div', { class: 'stage', id: 'stage', 'data-mood': v.mood || '' },
-    h('div', { class: 'scene' }, svg, hud),
+    h('div', { class: 'scene' }, svg, hud), action,
     h('p', { id: 'stage-text', class: 'sr-only' }),
     h('p', { id: 'motion-note', class: 'note' }),
     h('p', { id: 'mood', class: 'mood', 'aria-hidden': 'true' }));
@@ -391,18 +465,10 @@ function updateScene(v) {
   const burst = $('burst'); const age = vis.burst ? now - vis.burst.t0 : 1e9;
   if (age < 450 && !still) { burst.setAttribute('visibility', 'visible'); burst.setAttribute('cx', (chX() + (vis.burst.x - d) * sc.pxPerM).toFixed(1)); burst.setAttribute('cy', (sc.groundPx - vis.burst.y * sc.pxPerM).toFixed(1)); burst.setAttribute('r', 12 + age * 0.12); burst.setAttribute('opacity', (1 - age / 450).toFixed(2)); } else burst.setAttribute('visibility', 'hidden');
 
-  // The Catalyst 6500: streaks in from the left and rams the character, then stays where it hit.
-  const impactMs = v.config.launch.impactMs;
-  const lw = $('launcher-wrap');
-  const lm = v.launchMs;
-  const before = !AIMING.slice(0, 3).includes(v.phase) && lm < impactMs || v.phase === 'launching';
-  let lx = null;
-  if (!still && !glide && v.phase !== 'briefing' && v.phase !== 'aim-power' && v.phase !== 'aim-angle') {
-    if (v.phase === 'launching' && lm < impactMs) { const t = lm / impactMs; lx = -230 + (chX() - 100 + 230) * t * t; } else lx = chX() + (-48 - d) * sc.pxPerM;
-  }
-  if (lx === null || lx < -260) lw.setAttribute('visibility', 'hidden');
-  else { lw.setAttribute('transform', `translate(${lx} ${sc.groundPx}) scale(1.2)`); lw.setAttribute('visibility', 'visible'); }
-  const impacting = v.phase === 'launching' && lm < impactMs && !still;
+  // The Catalyst 6500, an angry bull (FR-052)
+  updateBull(v, now, still, d);
+  const impacting = v.phase === 'launching' && !v.aim.relaunch && v.launchMs < v.config.launch.impactMs && !still;
+  const impactMs = v.config.launch.impactMs; const lm = v.launchMs;
 
   // Character: a rigid body. Position and orientation come from the simulation and the tail is its rope
   // (FR-041); the face emotes from sim events and the UI mood (FR-042).
@@ -465,10 +531,10 @@ function updateScene(v) {
 function stageSentence(v) {
   const s = v.sim; const a = v.aim;
   switch (v.phase) {
-    case 'briefing': return 'The character stands on the road, minding its own business.';
-    case 'aim-power': return `Power gauge moving: ${Math.round((a.power01 || 0) * 100)} percent. Lock it with the Lock button.`;
+    case 'briefing': return 'The character stands on the road minding its own business while an angry Catalyst 6500 snorts and paws the ground nearby.';
+    case 'aim-power': return `${a.relaunch ? 'Power-up! ' : ''}Power dial moving: ${Math.round((a.power01 || 0) * 100)} percent. Lock it with the Lock button.`;
     case 'aim-angle': return `Angle gauge moving: ${Math.round(a.angleDeg || 0)} degrees. Lock it with the Lock button.`;
-    case 'launching': return 'The Catalyst 6500 streaks across the screen and rams the character.';
+    case 'launching': return a.relaunch ? 'Launching with your chosen power and angle.' : 'The angry Catalyst 6500 charges across the screen and rams the character.';
     case 'glide': return `Victory glide at ${formatSpeed(s.speedMps, v.config)}.`;
     default: return `${fmtM(s.x)} travelled, ${s.bounces} device bounces${s.lastBounce ? `, last bounce ${s.lastBounce.q >= 0.6 ? 'solid' : s.lastBounce.q < 0.4 ? 'poor' : 'fair'}` : ''}, ${s.status === 'running' ? (s.grounded ? 'sliding on the road' : 'tumbling through the air') : 'stopped on the road after missing, looking sad'}.`;
   }
@@ -506,17 +572,23 @@ function updateDials(v) {
   const stage = v.aim.stage;
   const dialX = view.w - 80; const dialY = view.h > SCENE.h ? Math.round(view.vy + view.h * 0.5) : DIAL.cy;
   for (const k of ['power', 'angle', 'boost']) { const g = $(`dial-${k}`); const key = `${dialX},${dialY}`; if (g.__x !== key) { g.__x = key; g.setAttribute('transform', `translate(${dialX} ${dialY})`); } }
+  const btn = $('lock-btn') || $('boost-btn'); const svgEl = $('scene-svg');
+  if (btn && svgEl && svgEl.clientWidth) {
+    const W = svgEl.clientWidth; const H = svgEl.clientHeight; const k = Math.min(W / view.w, H / view.h);
+    const left = Math.round((W - view.w * k) / 2 + dialX * k); const top = Math.round(H - view.h * k + (dialY - 86 - 32 - view.vy) * k);
+    const key = `${left},${top}`; if (btn.__pos !== key) { btn.__pos = key; btn.style.left = `${left}px`; btn.style.top = `${top}px`; }
+  }
   const flying = (v.phase === 'flying' || v.phase === 'glide') && v.sim.status === 'running';
   const show = { power: stage === 'power', angle: stage === 'angle', boost: flying };
   for (const k of ['power', 'angle', 'boost']) $(`dial-${k}`).setAttribute('visibility', show[k] ? 'visible' : 'hidden');
   const needle = (k, t) => $(`dial-${k}-needle`).setAttribute('transform', `rotate(${((Math.min(1, Math.max(0, t)) - 0.5) * 180).toFixed(1)})`);
   if (show.power) {
     const p = v.aim.power01 === null ? 0 : v.aim.power01; needle('power', p);
-    setText($('dial-power-val'), `${Math.round(p * 100)}%`); setText($('dial-power-sub'), 'click to lock');
+    setText($('dial-power-val'), `${Math.round(p * 100)}%`); setText($('dial-power-sub'), 'press Lock');
   }
   if (show.angle) {
     const g = v.config.physics; const a = v.aim.angleDeg === null ? g.angleMinDeg : v.aim.angleDeg; needle('angle', (a - g.angleMinDeg) / (g.angleMaxDeg - g.angleMinDeg));
-    setText($('dial-angle-val'), `${Math.round(a)}\u00B0`); setText($('dial-angle-sub'), `power ${Math.round((v.aim.power01 || 0) * 100)}% locked, click to lock`);
+    setText($('dial-angle-val'), `${Math.round(a)}\u00B0`); setText($('dial-angle-sub'), `power ${Math.round((v.aim.power01 || 0) * 100)}% locked`);
   }
   if (show.boost) {
     const sweep = v.draw ? v.draw.sweepMs : v.sim.sweepMs; const p = gaugeValue(sweep, v.config.boost.sweepMs);
@@ -526,24 +598,25 @@ function updateDials(v) {
     setText($('dial-boost-val'), left <= 0 ? 'EMPTY' : ready ? `${Math.round(boostQuality(sweep, v.config) * 100)}%` : 'WAIT');
     setText($('dial-boost-sub'), left <= 0 ? 'collect orbs' : `${left} left, ${ready ? 'click or B' : 'recharging'}`);
     $('dial-boost').setAttribute('opacity', ready && left > 0 ? 1 : 0.6);
+    if (btn) { const off = left <= 0 || !ready; if (btn.__off !== off) { btn.__off = off; btn.className = off ? 'action off' : 'action'; } }
   }
   const pv = $('pw-val'); if (pv) setText(pv, v.aim.power01 === null ? 'Power: not set' : `Power: ${Math.round(v.aim.power01 * 100)}%`);
   const av = $('an-val'); if (av) setText(av, v.aim.angleDeg === null ? 'Angle: not set' : `Angle: ${Math.round(v.aim.angleDeg)}\u00B0`);
 }
 
+// Instruction text for aiming and flight is visually hidden so nothing covers the gameplay (FR-051);
+// the Lock / Boost button lives in the scene above the dial.
 function boostControls() {
   return h('section', { class: 'boost', 'aria-labelledby': 'boost-h' },
     h('h2', { id: 'boost-h', text: 'Boost' }),
-    h('p', { id: 'boost-state', class: 'boost-state' }),
-    h('button', { type: 'button', id: 'boost-btn', 'data-action': 'boost', text: 'Boost (B)' }));
+    h('p', { id: 'boost-state', class: 'boost-state' }));
 }
 
 function aimControls(v) {
   const power = v.phase === 'aim-power';
   return h('section', { class: 'aim', 'aria-labelledby': 'screen-heading' },
-    h('p', { class: 'note', text: power ? 'Watch the POWER dial on the right of the scene. Its needle sweeps from low to high and back. Click the dial, press Lock, or press Space once to stop it: timing is key.' : 'Power is locked. Now watch the ANGLE dial: click it, press Lock, or press Space once to stop the needle.' }),
+    h('p', { class: 'note', text: power ? 'Watch the POWER dial on the right of the scene. Its needle sweeps from low to high and back. Press the Lock button above the dial, or Space, once to stop it: timing is key.' : 'Power is locked. Now watch the ANGLE dial and press Lock, or Space, once to stop the needle.' }),
     h('p', { class: 'aim-readout', id: 'pw-val' }), h('p', { class: 'aim-readout', id: 'an-val' }),
-    h('div', { class: 'actions' }, h('button', { type: 'button', id: 'lock-btn', class: 'lock', 'data-action': 'lock', text: power ? 'Lock power' : 'Lock angle' })),
     v.assist ? h('p', { class: 'note', text: `Assist is on: the lock uses a fixed good value (power ${Math.round(v.config.gauge.assistPower * 100)}%, angle ${v.config.gauge.assistAngleDeg}\u00B0).` }) : '');
 }
 
@@ -578,14 +651,14 @@ export function renderMain(root, v, ui) {
       break;
     case 'aim-power':
     case 'aim-angle':
-      body = panel('bar', heading(v.phase === 'aim-power' ? 'Set your power' : 'Set your angle'), aimControls(v));
+      body = panel('sr', heading(v.aim.relaunch ? (v.phase === 'aim-power' ? 'Power up! Set your power again' : 'Power up! Set your angle again') : (v.phase === 'aim-power' ? 'Set your power' : 'Set your angle')), aimControls(v));
       break;
     case 'launching':
-      body = panel('bar', heading('Incoming!'), h('p', { text: 'The Catalyst 6500 is on its way...' }));
+      body = panel('sr', heading(v.aim.relaunch ? 'Launching!' : 'Incoming!'), h('p', { text: v.aim.relaunch ? 'Launching with your power and angle.' : 'The angry Catalyst 6500 is charging at the character...' }));
       break;
     case 'flying':
     case 'glide':
-      body = panel('bar', heading(v.phase === 'glide' ? 'Victory glide' : 'Flying'),
+      body = panel('sr', heading(v.phase === 'glide' ? 'Victory glide' : 'Flying'),
         h('p', { text: v.phase === 'glide' ? 'You beat the boss! No more questions: enjoy the glide and press Boost for fun.' : 'Bounce off the devices to keep going and fly into the gold orbs to collect boosts. You have a few boosts: use them when the needle is near BEST. If you stop on the road, a question appears.' }),
         boostControls());
       break;

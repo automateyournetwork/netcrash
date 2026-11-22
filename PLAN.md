@@ -1,5 +1,5 @@
 > **SUPERSEDED.** The authoritative documents for this game are in `specs/001-netcrash-osi-game/`
-> (`spec.md`, `plan.md`, `tasks.md`) and `.specify/memory/constitution.md` (v1.3.0). This file is kept
+> (`spec.md`, `plan.md`, `tasks.md`) and `.specify/memory/constitution.md` (v1.3.1). This file is kept
 > only as the original input. Where it disagrees with those documents, they win.
 
 > **Editor note — personalize, then remove this note.**

@@ -44,7 +44,7 @@ attempt. Repeated Submit actions MUST NOT award progress twice.
 
 The first version has no lives, wall-clock countdown, or bonus for answering quickly. Energy is a game resource
 that drains only with distance traveled, never with elapsed time, and all gameplay MUST pause while
-a question is open. Boost timing MAY change distance travelled but MUST NOT affect points, score, or
+a question is open. Boost timing MAY change distance travelled, and boosts MAY be a limited, collectible resource, but neither MAY affect points, score, or
 grading; an assist option MUST remove any timing barrier and its use MUST be recorded. Retries carry
 no penalty.
 
@@ -143,4 +143,4 @@ principles or materially expanded guidance, PATCH for clarifications and wording
 specs, plans, and reviews MUST verify compliance with Principles I–VII. Runtime guidance lives in
 the project README and `netcrash/` spec and plan documents.
 
-**Version**: 1.3.0 | **Ratified**: 2026-11-21 | **Last Amended**: 2026-11-22
+**Version**: 1.3.1 | **Ratified**: 2026-11-21 | **Last Amended**: 2026-11-23
