@@ -1,6 +1,6 @@
 # NETCRASH
 
-A browser remake of the *Nanaca Crash* distance game, themed on networking, for entry-level network
+A browser game **inspired by** the Flash launch game *Nanaca Crash* (no assets, code or text from it are used; all art is original SVG), themed on networking, for entry-level network
 engineers. Your character stands on the road; you press Launch, lock a sweeping **power** dial and a sweeping
 **angle** dial (analog gauges drawn in the scene, on the far right, shown only when needed) with one click each (timing is key), and a Catalyst 6500 streaks in and rams the character.
 Flight uses rigid-body physics: the plug tumbles, its Cat6 tail swings, and you **bounce off network devices** along the road. Each bounce is calculated from the contact (a flat landing gives a strong, well-angled bounce and more energy; a tilted or glancing landing gives a weaker one and more spin), and the bare road slows you down. Its face shows how it feels: happy after solid bounces, good boosts and correct answers, sad after misses. When you stop on the road, a question asks about
@@ -35,7 +35,7 @@ cd netcrash && python3 serve.py            # listens on all interfaces, port 800
 It prints the addresses to open, for example `http://192.168.1.20:8000/`. It serves only the game files
 (the reference `*.zip` and `serve.py` return 404) and needs no build step.
 
-**If this machine is Windows with the game inside WSL2** (easiest: run `expose-wsl.ps1` in an administrator PowerShell; it does Option A below with the current WSL address and a Private-network-only firewall rule, and `-Remove` undoes it) (the case on the dev workstation) the other
+**If this machine is Windows with the game inside WSL2** (use Option A or B below) (the case on the dev workstation) the other
 device cannot see WSL directly. Do one of these in an **administrator** PowerShell:
 
 ```powershell
@@ -70,7 +70,7 @@ Only expose it on a network you trust: the server has no login.
 - **Flight feel**: looser gravity, higher speeds, a faster-scrolling scene, a camera that zooms out when you fly high so the road and devices stay in view, a gentle glide (not a drop) when you run out of energy, and powerful device contacts (big kick, forward gain, energy and vault boost).
 - **Landing on a device hauls**: every landing on top (even a steep, tilted or spinning one) throws you forward fast along a good angle; you never ride on top of one.
 - **Contacts never send you backwards**: a side hit on a device vaults you up and over with extra forward speed, and top bounces add forward speed on top of the contact result, so momentum builds.
-- **Gone plaid**: at 400 Gbps (200 m/s) the background switches to tartan and an RV-cabin cutaway shows two cartoon characters watching you streak past (a homage to a 1987 film; original drawings).
+- **Gone plaid**: at 400 Gbps (200 m/s) the background switches to tartan and an RV-cabin cutaway shows two cartoon characters watching you streak past (a nod to a classic movie gag; original drawings, characters not named).
 - Energy drains with **distance only**, and everything pauses while a question is open (unlimited thinking time).
 - Wrong answers: no penalty, retry as often as you like; each wrong option has its own explanation.
 - If you run out of energy and stop, you get a **last-chance** question **every time** (the next layer, asked early); a correct answer gives the power-up and you keep going, a wrong answer ends the run. Out of energy you lose horizontal speed quickly and come down.
@@ -78,6 +78,12 @@ Only expose it on a network you trust: the server has no login.
 - **Joke alert:** speed is shown in network bit rates (Mbps, Gbps, Tbps) while distance is in meters.
   That mismatch is intentional humor and not a networking claim.
 - Reloading starts a fresh session; nothing is saved.
+
+## Repository layout
+
+- `index.html`, `main.js`, `style.css`, `engine/` (pure, deterministic simulation and grading), `ui/` (rendering and controls), `data/levels.json` (all content and tuning), `tests/`, `serve.py`, `assets/images/title.png` (arcade card image).
+- `specs/001-netcrash-osi-game/` and `.specify/`: the GitHub Spec Kit artifacts the game was built from (constitution, spec with dated clarifications, plan, tasks, research, data model, contracts, quickstart).
+- `ARCADE.md`: the arcade submission file.
 
 ## Structure
 
@@ -102,11 +108,11 @@ used only to run the tests. **No real browser run has been observed yet.**
 | Automated tests via `node tests/run-node.mjs` | **pass** | 90 / 90 passed, 0 failed (content, rules, rigid-body physics and contact quality, tail, boost quality, state, energy balance). The count dropped from 73 because the hint, worked-solution, briefing and layer-concept tests were removed with those features |
 | Energy balance (FR-026) | **pass** | every correct-answering run reaches the boss, even with no boosts; more good boosts and Assist give more bounces and more distance; a harsher drain (0.7/m) runs out of energy before the boss. Tuned values: drain 0.2/m, bounce +40, power-up +30, speed 80 m/s (+6 per answer), hop 1.6 s |
 | UI smoke test via `node tests/ui-smoke.mjs` (fake DOM, full playthrough: briefing, power and angle gauges, Catalyst launch, flight, wrong/right answers, assist, boss, glide, summary, restart) | **pass** | checks for the scene: layers, readouts, unlabeled devices, devices on the road, scrolling, animation default on and the switch, boost streaks; it found and fixed one real bug (the text "null" would have appeared in the feedback box). It does not check layout, focus ring, CSS animation, or screen readers |
-| Frame rate (SC-009, FR-034, FR-050) | **runs fine on another PC (no numbers); not measured** | the owner reported on 2026-11-23 that the animation runs fine on another PC (the dev workstation is slow). No fps figures were recorded yet: use `?fps=1` and record average fps, worst frame, browser and machine here (T088). The lower-quality mode logic is unit tested (`createQualityMonitor`); its effect on a slow machine is unmeasured |
-| Bull Catalyst, relaunch dials, single action button, faster flight (FR-038, FR-040, FR-051, FR-052) | **not run (owner review pending)** | built and covered by unit and smoke tests; headless Edge screenshots on 2026-11-23 show the horned bull idling, charging with red eyes and steam, and the Lock/Boost button above the dial on desktop and in the vertical format; the feel needs a human |
-| Forward-only contacts and the plaid scene (FR-044, FR-054) | **not run (owner review pending)** | unit tests (no backward velocity over a fuzz grid, additive bounces, plaid hysteresis) and smoke test pass; headless Edge screenshots on 2026-11-24 show the tartan background and the RV cabin with both characters and the bubble on desktop and in the vertical layout; the feel needs a human |
-| Layer 8 post-mortem question (FR-053) | **built, answer key is the owner's (B)** | the owner supplied the question and key on 2026-11-26; wording of the wrong-option reasons is mine |
-| Network access (FR-048) | **verified from another machine** | 2026-11-23: after running `expose-wsl.ps1` (administrator) the owner reached the game from another PC. `serve.py`'s refusals (404 for the zip, `.py`, `.ps1`) are covered by `tests/serve.test.js` |
+| Frame rate (SC-009, FR-034, FR-050) | **runs fine on another PC (no numbers); not measured** | the owner reported on 2026-11-22 that the animation runs fine on another PC (the dev workstation is slow). No fps figures were recorded yet: use `?fps=1` and record average fps, worst frame, browser and machine here (T088). The lower-quality mode logic is unit tested (`createQualityMonitor`); its effect on a slow machine is unmeasured |
+| Bull Catalyst, relaunch dials, single action button, faster flight (FR-038, FR-040, FR-051, FR-052) | **not run (owner review pending)** | built and covered by unit and smoke tests; headless Edge screenshots on 2026-11-22 show the horned bull idling, charging with red eyes and steam, and the Lock/Boost button above the dial on desktop and in the vertical format; the feel needs a human |
+| Forward-only contacts and the plaid scene (FR-044, FR-054) | **not run (owner review pending)** | unit tests (no backward velocity over a fuzz grid, additive bounces, plaid hysteresis) and smoke test pass; headless Edge screenshots on 2026-11-22 show the tartan background and the RV cabin with both characters and the bubble on desktop and in the vertical layout; the feel needs a human |
+| Layer 8 post-mortem question (FR-053) | **built, answer key is the owner's (B)** | the owner supplied the question and key on 2026-11-22; wording of the wrong-option reasons is mine |
+| Network access (FR-048) | **verified from another machine** | 2026-11-22: after Windows port forwarding and a firewall rule were set up (a local helper script, not part of the repo) the owner reached the game from another PC. `serve.py`'s refusals (404 for the zip, `.py`, `.ps1`) are covered by `tests/serve.test.js` |
 | Phone format (FR-049) | **detection unit tested; real phone not tested** | `chooseFormat` is tested against iPhone, Android, iPad, Mac and Windows user agents; the vertical layout and the single Lock/Boost button were only seen in a headless desktop browser at a narrow, tall size |
 | Bounce gameplay look (FR-032, FR-033) | **not run (owner review pending)** | headless Edge screenshots on 2026-11-22 show arcs, tumbling, devices on the road and the cone-marked road gap; the bounce feel needs a human |
 | Question set from the owner's OSI worksheet (FR-035) | **built, answer key not independently checked** | the eight questions the owner pasted; the answer key (B C B D B A D, boss B) is the standard one but every source is still `reviewed: false` (T043) |

@@ -126,7 +126,7 @@ check('boost shows speed streaks while cooling down', el('streaks').getAttribute
   const v0 = game.view(); const forged = { ...v0, sim: { ...v0.sim, plaid: true, speedMps: 160 } };
   updateStage(forged);
   check('plaid: the tartan background and the RV cabin cutaway appear, the normal sky layers hide', vis('plaid-bg') && vis('rv') && el('ly-far').getAttribute('visibility') === 'hidden' && el('ly-clouds').getAttribute('visibility') === 'hidden');
-  check('plaid: the two cartoon characters and the speech bubble are in the cabin', ['rv-ls', 'rv-barf', 'rv-bubble', 'rv-ls-pupil-L', 'rv-barf-mouth', 'rv-streak'].every((i) => !!el(i)) && el('rv-bubble').textContent.includes("He's gone plaid!?!"));
+  check('plaid: the two cartoon characters and the speech bubble are in the cabin', ['rv-pilot', 'rv-sidekick', 'rv-bubble', 'rv-pilot-pupil-L', 'rv-sidekick-mouth', 'rv-streak'].every((i) => !!el(i)) && el('rv-bubble').textContent.includes("He's gone plaid!?!"));
   check('plaid: announced in the text equivalent and the plug is happy', /gone plaid/.test(el('stage-text').textContent) && el('mouth').getAttribute('d').startsWith('M-6 6.5'), el('stage-text').textContent);
   updateStage(v0);
   check('plaid: back to the normal sky when the speed drops', !vis('plaid-bg') && !vis('rv') && el('ly-far').getAttribute('visibility') === 'visible');

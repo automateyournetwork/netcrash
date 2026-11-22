@@ -294,8 +294,8 @@ function pickupArt() {
 }
 
 // ---- Plaid (FR-054): a tartan background and an RV-cabin cutaway with two original cartoon characters,
-// a human pilot and his furry sidekick, who watch the plug streak past. A homage to a 1987 comedy film; the
-// drawings are original. ----
+// a human pilot and his furry dog-faced sidekick, who watch the plug streak past. A nod to a classic movie
+// gag; the drawings are original and the characters are not named in the game. ----
 const PLAID_TILE = 120;
 function plaidDefs() {
   const d = mk('defs'); const pat = mk('pattern', { id: 'plaid-pat', width: PLAID_TILE, height: PLAID_TILE, patternUnits: 'userSpaceOnUse' });
@@ -308,7 +308,7 @@ function plaidDefs() {
 function cartoonFace(prefix, cx, cy, kind) {
   const ink = '#2a1a10'; const g = grp({ id: `${prefix}`, transform: `translate(${cx} ${cy})` });
   const eye = (x, id) => [mk('ellipse', { cx: x, cy: -4, rx: 6, ry: 6.6, fill: '#fff', stroke: ink, 'stroke-width': 1.4 }), mk('circle', { id: `${prefix}-pupil-${id}`, cx: x, cy: -4, r: 2.6, fill: '#111' })];
-  if (kind === 'barf') {
+  if (kind === 'sidekick') {
     g.append(mk('ellipse', { cx: -25, cy: 2, rx: 8, ry: 18, fill: '#5e3b1f', stroke: ink, 'stroke-width': 2, transform: 'rotate(14 -25 2)' }), mk('ellipse', { cx: 25, cy: 2, rx: 8, ry: 18, fill: '#5e3b1f', stroke: ink, 'stroke-width': 2, transform: 'rotate(-14 25 2)' }),
       mk('ellipse', { cx: 0, cy: 0, rx: 21, ry: 21, fill: '#8a5a32', stroke: ink, 'stroke-width': 2.4 }),
       ...eye(-9, 'L'), ...eye(9, 'R'),
@@ -333,8 +333,8 @@ function rvCabin() {
     mk('text', { x: 14, y: 14, 'font-size': 10, 'font-weight': 800, fill: '#ff6b6b' }, '\u25CF RV CAM'));
   g.append(grp({ id: 'rv-streak' }, mk('rect', { x: -40, y: -9, width: 80, height: 18, rx: 9, fill: '#fff', opacity: 0.35 }), mk('rect', { x: -14, y: -7, width: 28, height: 14, rx: 3, fill: '#cfe9ff', stroke: '#1b2b44', 'stroke-width': 1.5 }), mk('rect', { x: 14, y: -4, width: 7, height: 8, fill: '#d4a82a' })));
   g.append(grp({ id: 'rv-crew' },
-    mk('path', { d: 'M40 112 Q42 92 68 92 Q94 92 96 112 Z', fill: '#6a4a2f', stroke: ink, 'stroke-width': 2 }), cartoonFace('rv-ls', 68, 82, 'ls'),
-    mk('path', { d: 'M178 112 Q180 90 206 90 Q232 90 234 112 Z', fill: '#7a8aa0', stroke: ink, 'stroke-width': 2 }), cartoonFace('rv-barf', 206, 80, 'barf')));
+    mk('path', { d: 'M40 112 Q42 92 68 92 Q94 92 96 112 Z', fill: '#6a4a2f', stroke: ink, 'stroke-width': 2 }), cartoonFace('rv-pilot', 68, 82, 'pilot'),
+    mk('path', { d: 'M178 112 Q180 90 206 90 Q232 90 234 112 Z', fill: '#7a8aa0', stroke: ink, 'stroke-width': 2 }), cartoonFace('rv-sidekick', 206, 80, 'sidekick')));
   g.append(mk('rect', { x: 0, y: 104, width: W, height: 46, rx: 12, fill: '#5b3a1e', stroke: '#eee', 'stroke-width': 3 }), mk('rect', { x: 6, y: 106, width: W - 12, height: 6, fill: '#7d5230' }),
     mk('circle', { cx: 135, cy: 132, r: 17, fill: 'none', stroke: '#111', 'stroke-width': 5 }), mk('circle', { cx: 135, cy: 132, r: 5, fill: '#111' }), mk('path', { d: 'M118 132 H152 M135 132 V149', stroke: '#111', 'stroke-width': 3 }));
   const bubble = grp({ id: 'rv-bubble' }, mk('rect', { x: 56, y: 24, width: 158, height: 30, rx: 15, fill: '#fff', stroke: ink, 'stroke-width': 2.5 }), mk('path', { d: 'M110 53 L118 70 L128 53 Z', fill: '#fff', stroke: ink, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }),
@@ -520,7 +520,7 @@ function updateScene(v) {
     rv.setAttribute('transform', `translate(${(rx + (270 * scale - 270 * k) / 2).toFixed(1)} ${(ry + (150 * scale - 150 * k) / 2).toFixed(1)}) scale(${k.toFixed(3)})`); rv.setAttribute('visibility', 'visible');
     const t = still ? 0 : now;
     const dart = Math.sin(t / 85) * 3.2; const gape = 3.5 + Math.abs(Math.sin(t / 130)) * 3;
-    for (const who of ['rv-ls', 'rv-barf']) { for (const sd of ['L', 'R']) { const pu = $(`${who}-pupil-${sd}`); pu.setAttribute('cx', (sd === 'L' ? (who === 'rv-ls' ? -7 : -9) : (who === 'rv-ls' ? 7 : 9)) + dart); } $(`${who}-mouth`).setAttribute('ry', gape.toFixed(1)); }
+    for (const who of ['rv-pilot', 'rv-sidekick']) { for (const sd of ['L', 'R']) { const pu = $(`${who}-pupil-${sd}`); pu.setAttribute('cx', (sd === 'L' ? (who === 'rv-pilot' ? -7 : -9) : (who === 'rv-pilot' ? 7 : 9)) + dart); } $(`${who}-mouth`).setAttribute('ry', gape.toFixed(1)); }
     $('rv-crew').setAttribute('transform', `translate(0 ${(Math.sin(t / 45) * 0.9).toFixed(2)})`);
     $('rv-streak').setAttribute('transform', `translate(${(10 + ((t / 230) % 1) * 250).toFixed(1)} 60)`);
   } else { vis.plaidOn = false; $('rv').setAttribute('visibility', 'hidden'); }
@@ -620,7 +620,7 @@ function stageSentence(v) {
     case 'aim-angle': return `Angle gauge moving: ${Math.round(a.angleDeg || 0)} degrees. Lock it with the Lock button.`;
     case 'launching': return a.relaunch ? 'Launching with your chosen power and angle.' : 'The angry Catalyst 6500 charges across the screen and rams the character.';
     case 'glide': return `Victory glide at ${formatSpeed(s.speedMps, v.config)}.`;
-    default: if (s.plaid) return `${fmtM(s.x)} travelled at ${formatSpeed(s.speedMps, v.config)}: he's gone plaid! Lone Starr and Barf watch from the RV.`; return `${fmtM(s.x)} travelled, ${s.bounces} device bounces${s.lastBounce ? `, last bounce ${s.lastBounce.q >= 0.6 ? 'solid' : s.lastBounce.q < 0.4 ? 'poor' : 'fair'}` : ''}, ${s.status === 'running' ? (s.grounded ? 'sliding on the road' : 'tumbling through the air') : 'stopped on the road after missing, looking sad'}.`;
+    default: if (s.plaid) return `${fmtM(s.x)} travelled at ${formatSpeed(s.speedMps, v.config)}: he's gone plaid! Two cartoon characters watch from an RV.`; return `${fmtM(s.x)} travelled, ${s.bounces} device bounces${s.lastBounce ? `, last bounce ${s.lastBounce.q >= 0.6 ? 'solid' : s.lastBounce.q < 0.4 ? 'poor' : 'fair'}` : ''}, ${s.status === 'running' ? (s.grounded ? 'sliding on the road' : 'tumbling through the air') : 'stopped on the road after missing, looking sad'}.`;
   }
 }
 

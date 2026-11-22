@@ -143,4 +143,4 @@ principles or materially expanded guidance, PATCH for clarifications and wording
 specs, plans, and reviews MUST verify compliance with Principles I–VII. Runtime guidance lives in
 the project README and `netcrash/` spec and plan documents.
 
-**Version**: 1.4.0 | **Ratified**: 2026-11-21 | **Last Amended**: 2026-11-23
+**Version**: 1.4.0 | **Ratified**: 2026-11-21 | **Last Amended**: 2026-11-22

@@ -4,3 +4,5 @@
 *.zip
 __pycache__/
 *.log
+# Machine-specific helper (Windows/WSL port forwarding), not part of the game
+expose-wsl.ps1
