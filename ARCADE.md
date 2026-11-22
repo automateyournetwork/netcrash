@@ -27,7 +27,7 @@ game:
   card_image_alt: "A horned cartoon Catalyst 6500 switch with arms and legs charges at a cartoon RJ45 plug lying on a road, with network devices and an aim arrow ahead."
   repo: "https://github.com/richdeprez/netcrash"
   repo_path: ""
-  license: "unknown"        # no LICENSE file exists yet; the owner has to choose one
+  license: "MIT"
 
 creator:                     # (HUMAN) to be filled in by the owner
   name: ""

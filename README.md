@@ -136,3 +136,7 @@ dials. Everything except the title bar floats over the scene because play pauses
 - One level, seven questions, one boss. No persistence, accounts, multiplayer, leaderboard, audio, or runtime AI.
 - Tuning (energy, speeds, boost sizes) comes from a back-of-envelope model; adjust `config` in `data/levels.json` after a playtest.
 - Gameplay feel is inferred from the original game description; the reference speedrun video has not been reviewed.
+
+## License
+
+MIT, see `LICENSE`. The Flash game that inspired this project is not included and none of its assets are used.
