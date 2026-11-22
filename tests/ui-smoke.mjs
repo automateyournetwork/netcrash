@@ -139,7 +139,11 @@ check('celebrate mood text', el('mood').textContent.includes('Celebrating'));
 check('face is happy after a correct answer', el('mouth').getAttribute('d').startsWith('M-6 6.5 Q0 15'), el('mouth').getAttribute('d'));
 click('next');
 check('after a correct answer the power dial pops up again (power-up), no flight yet', phase() === 'aim-power' && text().includes('Power up') && vis('dial-power') && !!byAction('lock') && game.view().sim.status === 'paused');
+check('the bull is back beside the plug while you re-aim', el('launcher-wrap').getAttribute('visibility') === 'visible');
 click('lock'); check('then the angle dial again', phase() === 'aim-angle' && vis('dial-angle')); click('lock');
+frames(3); const rl0 = el('launcher-wrap').getAttribute('transform'); frames(10);
+check('the plug is worried, not sad, while the bull charges (relaunch)', el('mouth').getAttribute('d').startsWith('M-2.5 9'), el('mouth').getAttribute('d'));
+check('the bull winds up and charges again before the relaunch (run-up present)', phase() === 'launching' && el('launcher-wrap').getAttribute('transform') !== rl0 && el('bull-mouth').getAttribute('d').startsWith('M-12 -64'), el('launcher-wrap').getAttribute('transform'));
 until(() => phase() === 'flying');
 check('relaunched with the chosen values: flying again', text().includes('Flying') && game.view().sim.status === 'running');
 

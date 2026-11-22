@@ -49,8 +49,7 @@
     "launch": {
       "impactMs": 1100,
       "settleMs": 500,
-      "spinRadS": 2.4,
-      "relaunchMs": 350
+      "spinRadS": 2.4
     },
     "devices": {
       "count": 60,

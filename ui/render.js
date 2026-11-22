@@ -118,8 +118,8 @@ function launcher() {
   const armF = limb('bull-armF', 31, -70, 9, 32, '#c9d2e0'); armF.append(mk('circle', { cx: 0, cy: 34, r: 7, fill: '#e6ebf3', stroke: ink, 'stroke-width': 2 }));
   const armB = limb('bull-armB', -31, -70, 9, 32, '#c9d2e0'); armB.append(mk('circle', { cx: 0, cy: 34, r: 7, fill: '#e6ebf3', stroke: ink, 'stroke-width': 2 }));
   const chassis = [mk('rect', { x: -32, y: -96, width: 64, height: 64, rx: 6, fill: '#1c4f8f', stroke: ink, 'stroke-width': 3 })];
-  for (let i = 0; i < 2; i++) chassis.push(mk('rect', { x: -26, y: -52 + i * 9, width: 52, height: 6, fill: '#0d2b50' }));
-  for (let j = 0; j < 8; j++) chassis.push(mk('rect', { x: -23 + j * 6.2, y: -51, width: 3.6, height: 3.6, fill: j % 3 ? '#7fb4f0' : '#3fe06b' }));
+  chassis.push(mk('rect', { x: -26, y: -54, width: 52, height: 5.5, fill: '#0d2b50' }));
+  for (let j = 0; j < 8; j++) chassis.push(mk('rect', { x: -23 + j * 6.2, y: -53.3, width: 3.6, height: 3.6, fill: j % 3 ? '#7fb4f0' : '#3fe06b' }));
   const horn = (s) => mk('path', { d: `M${s * 22} -94 Q${s * 40} -98 ${s * 38} -118 Q${s * 28} -104 ${s * 12} -94 Z`, fill: '#f2e6c4', stroke: ink, 'stroke-width': 2.5, 'stroke-linejoin': 'round' });
   const eye = (side) => { const id = side < 0 ? 'L' : 'R'; return [
     mk('ellipse', { id: `bull-eye-${id}`, cx: side * 10, cy: -79, rx: 6.5, ry: 5.5, fill: '#fff', stroke: ink, 'stroke-width': 1.8 }),
@@ -129,7 +129,7 @@ function launcher() {
     mk('ellipse', { cx: -5, cy: -67, rx: 2, ry: 2.6, fill: ink }), mk('ellipse', { cx: 5, cy: -67, rx: 2, ry: 2.6, fill: ink }),
     mk('path', { id: 'bull-mouth', d: '', stroke: ink, 'stroke-width': 2.4, fill: 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
   const steam = grp({ id: 'bull-steam' }); for (let i = 0; i < 3; i++) steam.append(mk('circle', { id: `bull-steam-${i}`, cx: 0, cy: 0, r: 7, fill: '#fff', opacity: 0, stroke: '#cfd8e6', 'stroke-width': 1.5 }));
-  const body = grp({ id: 'bull-body' }, legB, armB, grp({}, ...chassis), horn(-1), horn(1), face, mk('text', { x: 0, y: -37, 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 800, fill: '#cfe9ff' }, 'Catalyst 6500'), legF, armF);
+  const body = grp({ id: 'bull-body' }, legB, armB, grp({}, ...chassis), horn(-1), horn(1), face, legF, armF, mk('text', { x: 0, y: -43.5, 'text-anchor': 'middle', 'font-size': 7.6, 'font-weight': 800, fill: '#fff', stroke: '#0a1d35', 'stroke-width': 2.2, 'paint-order': 'stroke' }, 'Catalyst 6500'));
   return grp({ id: 'launcher' }, body, steam);
 }
 
@@ -152,15 +152,18 @@ function updateBull(v, now, still, d) {
   const sc = SCENE; const $ = (id) => document.getElementById(id);
   const impactMs = v.config.launch.impactMs; const lm = v.launchMs;
   const hitX = chX() - 70; const idleX = Math.max(74, chX() - 210);
-  const launching = v.phase === 'launching' && !v.aim.relaunch; const before = v.phase === 'briefing' || v.phase === 'aim-power' || v.phase === 'aim-angle' || launching;
-  const afterHit = !before && v.sim.answersCorrect >= 0 && lm >= impactMs;
+  // The bull charges on every launch: the first one and the power-up re-aim after a correct answer.
+  const launching = v.phase === 'launching'; const before = v.phase === 'briefing' || v.phase === 'aim-power' || v.phase === 'aim-angle' || launching;
   let x = null; let mode = 'idle';
   if (before) {
     if (launching) {
       const t = Math.min(1, lm / impactMs); const wind = 0.3;
       if (t < wind) { x = idleX; mode = 'windup'; } else { const u = (t - wind) / (1 - wind); x = idleX + (hitX - idleX) * u * u; mode = 'charge'; }
     } else x = idleX;
-  } else if (afterHit && !still && v.sim.phase !== 'glide') { x = chX() + ((hitX - chX()) / sc.pxPerM - d) * sc.pxPerM; mode = 'smug'; }
+  } else if (v.launch.seq > 0 && !still && v.sim.phase !== 'glide') {
+    // After the ram it stays where it hit, in the world, and scrolls away as the character flies off.
+    const hitWorld = v.launch.x + (hitX - chX()) / sc.pxPerM; x = chX() + (hitWorld - d) * sc.pxPerM; mode = 'smug';
+  }
   const g = $('launcher-wrap');
   if (x === null || x < -120 || (still && mode !== 'idle')) { g.setAttribute('visibility', 'hidden'); return null; }
   g.setAttribute('visibility', 'visible'); g.setAttribute('transform', `translate(${x.toFixed(1)} ${sc.groundPx}) scale(1.05)`);
@@ -467,7 +470,7 @@ function updateScene(v) {
 
   // The Catalyst 6500, an angry bull (FR-052)
   updateBull(v, now, still, d);
-  const impacting = v.phase === 'launching' && !v.aim.relaunch && v.launchMs < v.config.launch.impactMs && !still;
+  const impacting = v.phase === 'launching' && v.launchMs < v.config.launch.impactMs && !still;
   const impactMs = v.config.launch.impactMs; const lm = v.launchMs;
 
   // Character: a rigid body. Position and orientation come from the simulation and the tail is its rope
@@ -500,9 +503,11 @@ function updateScene(v) {
   if (v.mood === 'celebrate') emotion = 'happy';
   else if (v.mood === 'mourn') emotion = 'sad';
   else if (now < vis.emoUntil) emotion = vis.emo;
+  else if (v.phase === 'launching') emotion = 'worried';
+  else if (v.phase === 'aim-power' || v.phase === 'aim-angle') emotion = 'neutral';
   else if (glide) emotion = 'happy';
   else if (s.status === 'missed' || (s.status === 'paused' && s.grounded && s.misses > 0)) emotion = 'sad';
-  else if (v.phase === 'launching' || (s.status === 'running' && !s.grounded && s.speedMps > 45)) emotion = 'worried';
+  else if (s.status === 'running' && !s.grounded && s.speedMps > 45) emotion = 'worried';
   const spd = s.speedMps || 0;
   const lookX = spd > 1 ? (s.vx * Math.cos(s.th) + s.vy * Math.sin(s.th)) / spd : 0; const lookY = spd > 1 ? -(-s.vx * Math.sin(s.th) + s.vy * Math.cos(s.th)) / spd : 0;
   applyFace(emotion, still ? 0 : lookX, still ? 0 : lookY, !still && now % 3400 < 130);

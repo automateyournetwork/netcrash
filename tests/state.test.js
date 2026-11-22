@@ -84,21 +84,22 @@ test('retry works; correct completes once with +1 point and the power-up energy;
   assert.equal(v.phase, 'feedback'); assert.equal(v.score, 1); assert.equal(v.sim.energy, e0 + doc.config.powerUpEnergy); assert.equal(v.attempts, 2); assert.equal(v.mood, 'celebrate');
   g.submit(key.q1); v = g.view(); assert.equal(v.score, 1); assert.equal(v.attempts, 2); assert.equal(v.sim.energy, e0 + doc.config.powerUpEnergy);
 });
-function reaim(g, { power = 750, angle = 425 } = {}) { g.tick(power); g.lock(); g.tick(angle); g.lock(); g.tick(doc.config.launch.relaunchMs); }
-test('after a correct answer the power and angle dials pop up again, then the character is relaunched (no Catalyst charge)', () => {
+function reaim(g, { power = 750, angle = 425 } = {}) { g.tick(power); g.lock(); g.tick(angle); g.lock(); g.tick(doc.config.launch.impactMs); }
+test('after a correct answer the power and angle dials pop up again, then the bull charges again and the character is relaunched', () => {
   const g = createGame(doc); toQuestion(g); g.submit(key.q1); g.next();
   let v = g.view();
   assert.equal(v.phase, 'aim-power'); assert.equal(v.aim.relaunch, true); assert.equal(v.sim.status, 'paused'); const x0 = v.sim.x;
   g.tick(300); g.tick(450); g.lock(); assert.equal(g.view().phase, 'aim-angle'); g.tick(100); g.lock();
-  assert.equal(g.view().phase, 'launching'); g.tick(doc.config.launch.relaunchMs - 50); assert.equal(g.view().phase, 'launching'); assert.equal(g.view().sim.x, x0);
+  assert.equal(g.view().phase, 'launching'); g.tick(doc.config.launch.impactMs - 50); assert.equal(g.view().phase, 'launching'); assert.equal(g.view().sim.x, x0); assert.equal(g.view().sim.status, 'paused', 'nothing moves during the charge');
   g.tick(50); v = g.view();
   assert.equal(v.phase, 'flying'); assert.equal(v.sim.status, 'running'); assert.equal(v.aim.relaunch, false); near(v.sim.x, x0);
+  assert.equal(v.launch.seq, 2, 'the charge ended in a second impact'); near(v.launch.x, x0);
 });
 test('the relaunch uses the chosen power and angle: a better lock flies faster; Assist locks the fixed good values', () => {
-  const speed = (power) => { const g = createGame(doc); toQuestion(g, { assist: false }); g.submit(key.q1); g.next(); g.tick(power); g.lock(); g.tick(425); g.lock(); g.tick(doc.config.launch.relaunchMs); return g.view().sim.speedMps; };
+  const speed = (power) => { const g = createGame(doc); toQuestion(g, { assist: false }); g.submit(key.q1); g.next(); g.tick(power); g.lock(); g.tick(425); g.lock(); g.tick(doc.config.launch.impactMs); return g.view().sim.speedMps; };
   assert.ok(speed(750) > speed(200) + 5, 'more power, more speed');
   near(speed(750), doc.config.physics.powerMaxMps + doc.config.relaunch.stepMps);
-  const g = createGame(doc); toQuestion(g, { assist: true }); g.submit(key.q1); g.next(); g.tick(123); g.lock(); g.tick(77); g.lock(); g.tick(doc.config.launch.relaunchMs);
+  const g = createGame(doc); toQuestion(g, { assist: true }); g.submit(key.q1); g.next(); g.tick(123); g.lock(); g.tick(77); g.lock(); g.tick(doc.config.launch.impactMs);
   const v = g.view(); const p = doc.config.physics;
   near(v.sim.speedMps, p.powerMinMps + (p.powerMaxMps - p.powerMinMps) * doc.config.gauge.assistPower + doc.config.relaunch.stepMps);
   near(Math.atan2(v.sim.vy, v.sim.vx) * 180 / Math.PI, doc.config.gauge.assistAngleDeg);

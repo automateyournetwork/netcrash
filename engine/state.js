@@ -27,7 +27,7 @@ export function createGame(doc) {
       askedCount: 0, currentRoundId: null, lastChanceUsed: false, lastChance: false,
       bossDefeated: false, outcome: null, lastResult: null, assist: false, boostQueued: false,
       acc: 0, pendingNext: null, contentError: null, mood: null, moodSeq: 0,
-      gaugeMs: 0, lockedPower: null, lockedAngle: null, launchMs: 0, relaunch: false, relaunchMs: 0
+      gaugeMs: 0, lockedPower: null, lockedAngle: null, launchMs: 0, relaunch: false, launchSeq: 0, launchAtX: 0
     };
   }
   S = fresh();
@@ -98,7 +98,7 @@ export function createGame(doc) {
       } else if (S.phase === 'aim-angle') {
         S.lockedAngle = angleNow(); S.assistance.assistedLaunch = S.assistance.assistedLaunch || S.assist;
         if (S.assist) S.assistance.assistUsed = true;
-        S.phase = 'launching'; if (S.relaunch) S.relaunchMs = 0; else S.launchMs = 0;
+        S.phase = 'launching'; S.launchMs = 0;
       }
       return api.view();
     },
@@ -106,20 +106,15 @@ export function createGame(doc) {
     tick(dtMs) {
       if (S.phase === 'aim-power' || S.phase === 'aim-angle') { S.gaugeMs += dtMs; return api.view(); }
       if (S.phase === 'launching') {
-        // First launch: the Catalyst charges (impactMs). After a correct answer: a short pop (relaunchMs), no charge.
-        if (S.relaunch) {
-          S.relaunchMs += dtMs;
-          if (S.relaunchMs >= config.launch.relaunchMs) {
-            const power = powerFromGauge(S.lockedPower, config) + config.relaunch.stepMps * S.sim.answersCorrect;
-            S.sim = launch({ ...S.sim, status: 'paused', vx: 0, vy: 0, w: 0 }, power, S.lockedAngle, config.relaunch.spinRadS);
-            S.prev = S.sim; S.phase = 'flying'; S.acc = 0; S.relaunch = false;
-          }
-          return api.view();
-        }
+        // Every launch (the first, and the power-up re-aim after a correct answer) is a Catalyst charge that ends in an impact.
         S.launchMs += dtMs;
         if (S.launchMs >= config.launch.impactMs) {
-          S.sim = launch(S.sim, powerFromGauge(S.lockedPower, config), S.lockedAngle, config.launch.spinRadS * S.lockedPower);
-          S.prev = S.sim; S.phase = 'flying'; S.acc = 0;
+          const first = !S.relaunch;
+          const power = first ? powerFromGauge(S.lockedPower, config) : powerFromGauge(S.lockedPower, config) + config.relaunch.stepMps * S.sim.answersCorrect;
+          const spin = first ? config.launch.spinRadS * S.lockedPower : config.relaunch.spinRadS;
+          S.launchAtX = S.sim.x; S.launchSeq += 1;
+          S.sim = launch(first ? S.sim : { ...S.sim, status: 'paused', vx: 0, vy: 0, w: 0 }, power, S.lockedAngle, spin);
+          S.prev = S.sim; S.phase = 'flying'; S.acc = 0; S.relaunch = false;
         }
         return api.view();
       }
@@ -166,7 +161,7 @@ export function createGame(doc) {
       const to = S.pendingNext; S.pendingNext = null; S.lastResult = null; S.mood = null;
       if (to === 'boss') { S.phase = 'boss'; S.currentRoundId = boss.id; S.contentError = validation.boss; }
       else if (to === 'glide') { S.sim = startGlide(S.sim, config); S.phase = 'glide'; S.currentRoundId = null; }
-      else { S.relaunch = true; S.relaunchMs = 0; S.gaugeMs = 0; S.lockedPower = null; S.lockedAngle = null; S.phase = 'aim-power'; } // power-up: aim again
+      else { S.relaunch = true; S.gaugeMs = 0; S.lockedPower = null; S.lockedAngle = null; S.phase = 'aim-power'; } // power-up: aim again
       return api.view();
     },
 
@@ -194,7 +189,7 @@ export function createGame(doc) {
           angleDeg: stage === 'angle' ? angleNow() : S.lockedAngle,
           gaugeMs: S.gaugeMs, relaunch: S.relaunch
         },
-        launchMs: S.launchMs
+        launchMs: S.launchMs, launch: { seq: S.launchSeq, x: S.launchAtX }
       };
     }
   };
