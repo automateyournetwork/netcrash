@@ -133,6 +133,30 @@ function corners(n, p) {
   for (const sx of [-1, 1]) for (const sy of [-1, 1]) out.push({ rx: sx * a * c - sy * b * s, ry: sx * a * s + sy * b * c });
   return out;
 }
+
+// A landing on top of a device throws the character forward HARD (FR-040): the contact result (restitution, spin,
+// friction) is only the starting point. Quality scales the bonus, but even a poor landing leaves at a speed of at
+// least `padMinExitMps` x (0.6 + 0.4 x quality) along (mostly) the ideal angle, so nobody ever rides on top.
+// Returns true when the bounce happened.
+function padBounce(n, dev, cp, p, dv, lift) {
+  const phi = dev.tilt * DEG; const nx = Math.sin(phi); const ny = Math.cos(phi);
+  const vx0 = Math.max(0, n.vx); const eta = resolve(n, cp, nx, ny, dev.e, p.devMu, p);
+  if (eta === null) return false;
+  const kick = dv.padKickMps * eta; n.vx += kick * nx; n.vy += kick * ny; n.vx *= 1 + dv.padSpeedGain * eta;
+  n.y += lift;
+  // Better contact, better angle: blend toward the ideal pad angle (never less than padAimFloor, so even a poor landing goes forward).
+  const blend = Math.min(1, Math.max(dv.padAimFloor, eta * dv.padAimBlend));
+  let sp = Math.hypot(n.vx, n.vy); const ang = n.vx > 0 ? Math.atan2(n.vy, n.vx) : Math.PI / 2; const a2 = ang + (dv.padAngleDeg * DEG - ang) * blend;
+  sp = Math.max(sp, dv.padMinExitMps * (0.6 + 0.4 * eta)); // the haul-ass floor
+  sp = Math.min(sp, p.maxSpeedMps);
+  n.vx = sp * Math.cos(a2); n.vy = sp * Math.sin(a2);
+  n.vx = Math.max(n.vx, vx0 + dv.padAddVx * eta); // momentum is additive: never less than before, plus a forward gain
+  n.energy += dv.energy * (dv.energyMinFrac + (1 - dv.energyMinFrac) * eta);
+  n.grounded = false; n.bounces += 1; n.lastDevice = dev.id; n.bounceEvent = 'device';
+  n.bounceSeq += 1; n.lastBounce = { q: eta, kind: dev.kind, seq: n.bounceSeq };
+  return true;
+}
+
 // Devices are solid but never send the character backwards (FR-044): a corner inside a box is pushed out of
 // it (position only, velocity is not reflected), forward speed is kept and a vault boost is ADDED the first
 // time a device is hit, with enough upward speed to clear its top, so the character rides up and over it.
@@ -146,7 +170,10 @@ function collideSolid(n, p, dv) {
         const faces = [[cx - box.L, -1], [box.R - cx, 1], [box.T - cy, 0]];
         // No underside face: a plate on a pole can be passed under, and a body taller than the gap must never wedge.
         const [depth, face] = faces.sort((u, v) => u[0] - v[0])[0];
-        if (face === 0) { n.y += depth; n.vy = Math.max(n.vy, 0); n.vx = Math.max(n.vx, dv.vaultMinMps); return true; }
+        if (face === 0) { // landed on a top (corner already inside): a proper hard bounce when falling, a lift otherwise
+          if (n.vy < 0 && d.top === box.T && padBounce(n, d, c, p, dv, depth)) return true;
+          n.y += depth; n.vy = Math.max(n.vy, 0); n.vx = Math.max(n.vx, dv.vaultMinMps); return true;
+        }
         n.x += face * depth; // out of the wall; the speed is not reflected
         n.vx = Math.max(n.vx, dv.vaultMinMps); // always forward
         const lowY = n.y + contactPoint(n, p).lowRy;
@@ -251,26 +278,7 @@ export function step(s, input, config, dtMs = 50) {
       let hit = false;
       if (n.vy < 0) {
         const dev = n.devices.find((d) => Math.abs(lowX - d.x) <= d.half && lowPrev >= d.top && low < d.top);
-        if (dev) {
-          const phi = dev.tilt * DEG; const nx = Math.sin(phi); const ny = Math.cos(phi);
-          const vx0 = Math.max(0, n.vx); const eta = resolve(n, cp, nx, ny, dev.e, p.devMu, p);
-          if (eta !== null) {
-            const kick = dv.padKickMps * eta; n.vx += kick * nx; n.vy += kick * ny; n.vx *= 1 + dv.padSpeedGain * eta;
-            const sp = Math.hypot(n.vx, n.vy);
-            if (sp > p.maxSpeedMps) { n.vx *= p.maxSpeedMps / sp; n.vy *= p.maxSpeedMps / sp; }
-            n.y += dev.top - low;
-            // A better contact launches along a better angle: blend the direction toward the ideal pad angle, keep the speed.
-            if (n.vx > 0) {
-              const sp2 = Math.hypot(n.vx, n.vy); const ang = Math.atan2(n.vy, n.vx); const a2 = ang + (dv.padAngleDeg * DEG - ang) * Math.min(1, eta * dv.padAimBlend);
-              n.vx = sp2 * Math.cos(a2); n.vy = sp2 * Math.sin(a2);
-            }
-            n.vx = Math.max(n.vx, vx0 + dv.padAddVx * eta); // momentum is additive: never less than before, plus a forward gain
-            n.energy += dv.energy * (dv.energyMinFrac + (1 - dv.energyMinFrac) * eta);
-            n.bounces += 1; n.lastDevice = dev.id; n.bounceEvent = 'device';
-            n.bounceSeq += 1; n.lastBounce = { q: eta, kind: dev.kind, seq: n.bounceSeq };
-            hit = true;
-          }
-        }
+        if (dev) { hit = padBounce(n, dev, cp, p, dv, dev.top - low); }
       }
       if (!hit) collideSolid(n, p, dv);
       if (!hit && n.y + contactPoint(n, p).lowRy <= 0) {

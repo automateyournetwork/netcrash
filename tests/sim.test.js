@@ -85,7 +85,8 @@ test('device kinds bounce differently from the same fall', () => {
   assert.ok(Math.abs(a.vy - b.vy) > 1 || Math.abs(a.vx - b.vx) > 1);
 });
 test('passing beside a device or rising through it does not bounce', () => {
-  let s = { ...falling(0), x: 313 }; s = run(s, 4); assert.equal(s.bounces, 0);
+  const dv = createSim(cfg).devices; const mid = (dv[5].x + dv[6].x) / 2; assert.ok(dv[6].x - dv[5].x > 150, 'a wide gap');
+  let s = { ...falling(0), x: mid }; s = run(s, 4); assert.equal(s.bounces, 0);
   s = { ...falling(0), vy: 20, y: dev0.top - 5 }; s = run(s, 2); assert.equal(s.bounces, 0);
 });
 test('the road bounces less, slows and spins the character; a slow landing sticks, rights itself and slides to a miss', () => {
@@ -252,6 +253,25 @@ test('the ram lifts the body off the road at launch so a flat shot does not scra
   const a = launch(createSim(cfg), 60, 10, 2, 0); const b = launch(createSim(cfg), 60, 10, 2, cfg.launch.liftM);
   near(b.y - a.y, cfg.launch.liftM);
   assert.ok(run(b, 6, {}, noDevices).roadBounces === 0, 'no road contact during the first 0.3 s of a flat launch');
+});
+test('every landing on top of a device HAULS: from a near-vertical fall at any tilt or spin the exit is fast and forward, and it never rides on top', () => {
+  const sim = createSim(cfg); let minVx = 1e9; let minDist = 1e9; let n = 0;
+  for (const dev of sim.devices.slice(0, 7)) {
+    if (dev.kind === 3) continue; // the narrow mast is easy to miss entirely
+    for (const [dx, vx, th, w] of [[0, 2, 0, 0], [5, 3, 0.4, 2], [-6, 1, -0.5, -3], [0, 0, 1.2, 4]]) {
+      let s = { ...launch(createSim(cfg), 30, 45), x: dev.x + dx, y: dev.top + 300, vx, vy: -110, th, w };
+      let ev = null; for (let i = 0; i < 140 && !ev; i++) { s = step(s, {}, cfg, 50); if (s.bounceEvent) ev = s.bounceEvent; }
+      assert.equal(ev, 'device', `kind ${dev.kind} dx ${dx} th ${th}`);
+      minVx = Math.min(minVx, s.vx);
+      for (let i = 0; i < 40; i++) s = step(s, {}, cfg, 50);
+      minDist = Math.min(minDist, s.x - dev.x); n++;
+    }
+  }
+  assert.ok(n >= 20); assert.ok(minVx >= 75, `slowest exit vx ${minVx}`); assert.ok(minDist >= 150, `least distance covered in 2 s ${minDist}`);
+});
+test('a flat landing exits at least at the quality-scaled haul-ass floor, along a forward angle', () => {
+  const t = bounceOf(falling(0, 5, -80)); const sp = Math.hypot(t.vx, t.vy);
+  assert.ok(sp >= cfg.devices.padMinExitMps * (0.6 + 0.4 * t.lastBounce.q) - 0.5, `speed ${sp}`); assert.ok(t.vx > t.vy * 0.8 && t.vx > 80, `vx ${t.vx} vy ${t.vy}`);
 });
 // ---- Balance (FR-026): drive the whole game with a scripted bot ----
 function lockAt(g, cfgx, power, angleDeg) {

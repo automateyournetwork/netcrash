@@ -129,7 +129,9 @@
       "vaultClearM": 8,
       "vaultMaxVy": 90,
       "vaultCoolMs": 1200,
-      "vaultClimbMul": 1.2
+      "vaultClimbMul": 1.2,
+      "padMinExitMps": 150,
+      "padAimFloor": 0.85
     },
     "relaunch": {
       "mps": 74,
