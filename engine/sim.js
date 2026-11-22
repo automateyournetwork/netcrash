@@ -64,6 +64,7 @@ export function createSim(config) {
     energy: config.initialEnergy, boostCooldownMs: 0, sweepMs: 0, boostQuality: null,
     answersCorrect: 0, goodBoosts: 0, bounces: 0, roadBounces: 0, misses: 0, lastDevice: -1,
     lastBounce: null, bounceSeq: 0, boostSeq: 0, sideHits: 0, stuckMs: 0,
+    vaultId: -1, vaultCoolMs: 0, plaid: false, plaidSeq: 0,
     boosts: config.boost.startCount, pickups: buildPickups(config), taken: [], pickupSeq: 0, lastPickup: null,
     phase: 'cruise', status: 'standing', boostEvent: null, bounceEvent: null,
     devices: buildDevices(config)
@@ -132,7 +133,9 @@ function corners(n, p) {
   for (const sx of [-1, 1]) for (const sy of [-1, 1]) out.push({ rx: sx * a * c - sy * b * s, ry: sx * a * s + sy * b * c });
   return out;
 }
-// Any corner inside a device box rebounds the character off the nearest face (FR-044).
+// Devices are solid but never send the character backwards (FR-044): a corner inside a box is pushed out of
+// it (position only, velocity is not reflected), forward speed is kept and a vault boost is ADDED the first
+// time a device is hit, with enough upward speed to clear its top, so the character rides up and over it.
 function collideSolid(n, p, dv) {
   for (const d of n.devices) {
     if (Math.abs(d.x - n.x) > d.boxHalf + p.bodyHalfW + p.bodyHalfH + 4) continue;
@@ -140,24 +143,28 @@ function collideSolid(n, p, dv) {
       for (const c of corners(n, p)) {
         const cx = n.x + c.rx; const cy = n.y + c.ry;
         if (!(cx > box.L && cx < box.R && cy > box.B && cy < box.T)) continue;
-        const faces = [[cx - box.L, -1, 0], [box.R - cx, 1, 0], [box.T - cy, 0, 1]];
+        const faces = [[cx - box.L, -1], [box.R - cx, 1], [box.T - cy, 0]];
         // No underside face: a plate on a pole can be passed under, and a body taller than the gap must never wedge.
-        const [depth, nx, ny] = faces.sort((u, v) => u[0] - v[0])[0];
-        n.x += nx * depth; n.y += ny * depth;
-        const vn = (n.vx - n.w * c.ry) * nx + (n.vy + n.w * c.rx) * ny;
-        resolve(n, c, nx, ny, dv.sideRestitution, dv.sideMu, p);
-        if (ny > 0) n.w *= p.rollDamp;
-        if (-vn > 3) { // a real impact, not resting contact
+        const [depth, face] = faces.sort((u, v) => u[0] - v[0])[0];
+        if (face === 0) { n.y += depth; n.vy = Math.max(n.vy, 0); n.vx = Math.max(n.vx, dv.vaultMinMps); return true; }
+        n.x += face * depth; // out of the wall; the speed is not reflected
+        n.vx = Math.max(n.vx, dv.vaultMinMps); // always forward
+        const lowY = n.y + contactPoint(n, p).lowRy;
+        const need = Math.max(0, box.T - lowY + dv.vaultClearM);
+        const climb = Math.min(dv.vaultMaxVy, Math.sqrt(2 * p.gravity * need) * dv.vaultClimbMul);
+        n.vy = Math.max(n.vy, climb);
+        if (n.vaultId !== d.id || n.vaultCoolMs <= 0) { // first contact with this device: add forward momentum
+          n.vx += dv.vaultBoostMps; n.vaultId = d.id; n.vaultCoolMs = dv.vaultCoolMs;
           n.sideHits = (n.sideHits || 0) + 1; n.bounceEvent = 'side'; n.bounceSeq += 1;
-          n.lastBounce = { q: 0.2, kind: d.kind, seq: n.bounceSeq, side: true };
+          n.lastBounce = { q: 0.6, kind: d.kind, seq: n.bounceSeq, side: true };
         }
+        { const sp = Math.hypot(n.vx, n.vy); if (sp > p.maxSpeedMps) { n.vx *= p.maxSpeedMps / sp; n.vy *= p.maxSpeedMps / sp; } }
         return true;
       }
     }
   }
   return false;
 }
-
 
 // A pickup is collected when the body's center comes within its radius plus the body's half height.
 function collectPickups(n, config) {
@@ -195,6 +202,7 @@ export function step(s, input, config, dtMs = 50) {
   const n = { ...s, boostEvent: null, bounceEvent: null };
   const dt = dtMs / 1000;
   n.boostCooldownMs = Math.max(0, s.boostCooldownMs - dtMs);
+  n.vaultCoolMs = Math.max(0, (s.vaultCoolMs || 0) - dtMs);
   n.sweepMs = (s.sweepMs + dtMs) % config.boost.sweepMs;
   const wanted = Boolean(input && input.boostPressed) && s.boostCooldownMs <= 0;
   const q = wanted ? (input.assist ? 1 : boostQuality(s.sweepMs, config)) : 0;
@@ -233,7 +241,7 @@ export function step(s, input, config, dtMs = 50) {
     if (n.grounded) {
       n.th *= Math.exp(-p.rightRate * h); n.w = 0; n.y = halfHeight(n.th, p);
       const dec = p.slideDecel * h; n.vx = n.vx > 0 ? Math.max(0, n.vx - dec) : Math.min(0, n.vx + dec); n.vy = 0; n.x += n.vx * h;
-      if (collideSolid(n, p, dv)) { n.grounded = false; n.vy = Math.max(n.vy, Math.abs(n.vx) * 0.25 + 2); n.y = Math.max(n.y, halfHeight(n.th, p) + 0.05); }
+      if (collideSolid(n, p, dv)) { n.grounded = false; n.y = Math.max(n.y, halfHeight(n.th, p) + 0.05); }
     } else {
       const before = contactPoint(n, p); const lowPrev = n.y + before.lowRy;
       n.vy -= p.gravity * h; n.w *= 1 - p.spinDrag * h;
@@ -245,7 +253,7 @@ export function step(s, input, config, dtMs = 50) {
         const dev = n.devices.find((d) => Math.abs(lowX - d.x) <= d.half && lowPrev >= d.top && low < d.top);
         if (dev) {
           const phi = dev.tilt * DEG; const nx = Math.sin(phi); const ny = Math.cos(phi);
-          const eta = resolve(n, cp, nx, ny, dev.e, p.devMu, p);
+          const vx0 = Math.max(0, n.vx); const eta = resolve(n, cp, nx, ny, dev.e, p.devMu, p);
           if (eta !== null) {
             const kick = dv.padKickMps * eta; n.vx += kick * nx; n.vy += kick * ny; n.vx *= 1 + dv.padSpeedGain * eta;
             const sp = Math.hypot(n.vx, n.vy);
@@ -256,6 +264,7 @@ export function step(s, input, config, dtMs = 50) {
               const sp2 = Math.hypot(n.vx, n.vy); const ang = Math.atan2(n.vy, n.vx); const a2 = ang + (dv.padAngleDeg * DEG - ang) * Math.min(1, eta * dv.padAimBlend);
               n.vx = sp2 * Math.cos(a2); n.vy = sp2 * Math.sin(a2);
             }
+            n.vx = Math.max(n.vx, vx0 + dv.padAddVx * eta); // momentum is additive: never less than before, plus a forward gain
             n.energy += dv.energy * (dv.energyMinFrac + (1 - dv.energyMinFrac) * eta);
             n.bounces += 1; n.lastDevice = dev.id; n.bounceEvent = 'device';
             n.bounceSeq += 1; n.lastBounce = { q: eta, kind: dev.kind, seq: n.bounceSeq };
@@ -269,7 +278,7 @@ export function step(s, input, config, dtMs = 50) {
         const eta = resolve(n, cp2, 0, 1, p.roadRestitution, p.roadMu, p);
         n.y += -low2;
         if (eta !== null) {
-          n.w *= p.rollDamp; n.vx *= p.roadFriction;
+          n.w *= p.rollDamp; n.vx = Math.max(0, n.vx * p.roadFriction); // the road never throws you backwards either
           if (Math.abs(n.vy) < p.minBounceMps) { n.vy = 0; n.w = 0; n.grounded = true; n.y = halfHeight(n.th, p); }
           else { n.roadBounces += 1; if (!n.bounceEvent) n.bounceEvent = 'road'; }
         } else if (n.vy <= 0) { n.vy = 0; n.grounded = true; n.y = halfHeight(n.th, p); }
@@ -284,11 +293,15 @@ export function step(s, input, config, dtMs = 50) {
   // Wedged against a device (barely moving, off the ground) for a second: shake loose to the nearest clear
   // spot on the road, upright, so a run can never freeze.
   n.stuckMs = !n.grounded && Math.hypot(n.vx, n.vy) < 4 ? (s.stuckMs || 0) + dtMs : 0;
-  if (n.stuckMs >= 1000) {
+  if (n.stuckMs >= 1000) { // shake loose, forward first
     const clear = (x) => n.devices.every((d) => Math.abs(x - d.x) > Math.max(d.boxHalf, dv.poleHalfM) + p.bodyHalfW + 2);
-    let nx = n.x; for (let k = 1; k < 80 && !clear(nx); k++) { const l = n.x - 5 * k; const r = n.x + 5 * k; nx = clear(l) ? l : clear(r) ? r : nx; }
+    let nx = n.x; for (let k = 1; k < 80 && !clear(nx); k++) { const l = n.x - 5 * k; const r = n.x + 5 * k; nx = clear(r) ? r : clear(l) ? l : nx; }
     n.x = nx; n.th = 0; n.w = 0; n.vx = 0; n.vy = 0; n.grounded = true; n.y = p.bodyHalfH; n.stuckMs = 0; n.distanceM = n.x;
   }
+  // Plaid (FR-054): the displayed speed passed the threshold; leave only when it falls below the exit speed.
+  const gb = speedGbps(n.speedMps, config);
+  const on = s.plaid ? gb >= config.plaid.exitGbps : gb >= config.plaid.thresholdGbps;
+  n.plaid = on; if (on && !s.plaid) n.plaidSeq = (s.plaidSeq || 0) + 1;
   // Stopped on the road once it has also righted itself: that is a miss.
   if (n.grounded && Math.abs(n.vx) <= p.stopMps) { n.vx = 0; if (Math.abs(n.th) < 0.06) { n.status = 'missed'; n.misses = s.misses + 1; } velocity(n); }
   return n;
@@ -313,6 +326,8 @@ export function startGlide(s, config) {
     boostCooldownMs: 0, status: 'running', boostEvent: null, bounceEvent: null, grounded: false, th: 0, w: 0, y: 0
   };
 }
+
+export const speedGbps = (speedMps, config) => (speedMps * config.displayBitsPerMps) / 1e9;
 
 // 1 m/s is shown as displayBitsPerMps bits per second (an intentional joke unit mismatch).
 export function formatSpeed(speedMps, config) {

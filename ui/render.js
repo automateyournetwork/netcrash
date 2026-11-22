@@ -293,6 +293,57 @@ function pickupArt() {
     mk('path', { d: 'M2 -9 L-5 1.5 H0 L-2 9 L6 -2 H1 Z', fill: '#fff', stroke: '#7a5a00', 'stroke-width': 1.2, 'stroke-linejoin': 'round' }));
 }
 
+// ---- Plaid (FR-054): a tartan background and an RV-cabin cutaway with two original cartoon characters,
+// a human pilot and his furry sidekick, who watch the plug streak past. A homage to a 1987 comedy film; the
+// drawings are original. ----
+const PLAID_TILE = 120;
+function plaidDefs() {
+  const d = mk('defs'); const pat = mk('pattern', { id: 'plaid-pat', width: PLAID_TILE, height: PLAID_TILE, patternUnits: 'userSpaceOnUse' });
+  const R = (x, y, w, h, fill, o) => mk('rect', { x, y, width: w, height: h, fill, opacity: o });
+  pat.append(R(0, 0, 120, 120, '#a3122a', 1),
+    R(14, 0, 34, 120, '#0d6b3e', 0.85), R(64, 0, 9, 120, '#f2c230', 0.9), R(0, 0, 6, 120, '#111', 0.6), R(90, 0, 3, 120, '#fff', 0.6),
+    R(0, 14, 120, 34, '#0d6b3e', 0.5), R(0, 64, 120, 9, '#f2c230', 0.6), R(0, 0, 120, 6, '#111', 0.5), R(0, 90, 120, 3, '#fff', 0.45));
+  d.append(pat); return d;
+}
+function cartoonFace(prefix, cx, cy, kind) {
+  const ink = '#2a1a10'; const g = grp({ id: `${prefix}`, transform: `translate(${cx} ${cy})` });
+  const eye = (x, id) => [mk('ellipse', { cx: x, cy: -4, rx: 6, ry: 6.6, fill: '#fff', stroke: ink, 'stroke-width': 1.4 }), mk('circle', { id: `${prefix}-pupil-${id}`, cx: x, cy: -4, r: 2.6, fill: '#111' })];
+  if (kind === 'barf') {
+    g.append(mk('ellipse', { cx: -25, cy: 2, rx: 8, ry: 18, fill: '#5e3b1f', stroke: ink, 'stroke-width': 2, transform: 'rotate(14 -25 2)' }), mk('ellipse', { cx: 25, cy: 2, rx: 8, ry: 18, fill: '#5e3b1f', stroke: ink, 'stroke-width': 2, transform: 'rotate(-14 25 2)' }),
+      mk('ellipse', { cx: 0, cy: 0, rx: 21, ry: 21, fill: '#8a5a32', stroke: ink, 'stroke-width': 2.4 }),
+      ...eye(-9, 'L'), ...eye(9, 'R'),
+      mk('path', { d: 'M-16 -14 L-3 -11 M16 -14 L3 -11', stroke: ink, 'stroke-width': 2.6, 'stroke-linecap': 'round' }),
+      mk('ellipse', { cx: 0, cy: 9, rx: 13, ry: 10, fill: '#d8b98f', stroke: ink, 'stroke-width': 2 }), mk('ellipse', { cx: 0, cy: 3, rx: 5.5, ry: 4, fill: '#111' }), mk('circle', { cx: -1.5, cy: 2, r: 1.1, fill: '#fff' }),
+      mk('ellipse', { id: `${prefix}-mouth`, cx: 0, cy: 13, rx: 5, ry: 4, fill: '#3a0d0d', stroke: ink, 'stroke-width': 1.4 }), mk('ellipse', { cx: 0, cy: 16, rx: 3, ry: 2, fill: '#e0566d' }));
+  } else {
+    g.append(mk('path', { d: 'M-19 -4 Q-21 -26 0 -26 Q21 -26 19 -4 Q10 -16 0 -15 Q-10 -16 -19 -4 Z', fill: '#2b1b12', stroke: ink, 'stroke-width': 2 }),
+      mk('ellipse', { cx: 0, cy: 0, rx: 18, ry: 20, fill: '#e8b98a', stroke: ink, 'stroke-width': 2.4 }), mk('path', { d: 'M-19 -6 Q0 -22 19 -6 Q10 -14 0 -13 Q-10 -14 -19 -6 Z', fill: '#2b1b12' }),
+      ...eye(-7, 'L'), ...eye(7, 'R'),
+      mk('path', { d: 'M-13 -14 Q-7 -19 -2 -14 M2 -14 Q7 -19 13 -14', stroke: ink, 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'round' }),
+      mk('path', { d: 'M0 -2 L-2 6 L2 6', stroke: '#b9835a', 'stroke-width': 1.6, fill: 'none' }),
+      mk('ellipse', { id: `${prefix}-mouth`, cx: 0, cy: 11, rx: 4.5, ry: 5, fill: '#3a0d0d', stroke: ink, 'stroke-width': 1.4 }));
+  }
+  return g;
+}
+function rvCabin() {
+  const W = 270; const H = 150; const ink = '#1a1a1a';
+  const g = grp({ id: 'rv', visibility: 'hidden' });
+  g.append(mk('rect', { x: 0, y: 0, width: W, height: H, rx: 14, fill: '#232323', stroke: '#eee', 'stroke-width': 3 }),
+    mk('rect', { x: 10, y: 20, width: 250, height: 80, rx: 6, fill: 'url(#plaid-pat)', stroke: '#6b4a2a', 'stroke-width': 5 }),
+    mk('text', { x: 14, y: 14, 'font-size': 10, 'font-weight': 800, fill: '#ff6b6b' }, '\u25CF RV CAM'));
+  g.append(grp({ id: 'rv-streak' }, mk('rect', { x: -40, y: -9, width: 80, height: 18, rx: 9, fill: '#fff', opacity: 0.35 }), mk('rect', { x: -14, y: -7, width: 28, height: 14, rx: 3, fill: '#cfe9ff', stroke: '#1b2b44', 'stroke-width': 1.5 }), mk('rect', { x: 14, y: -4, width: 7, height: 8, fill: '#d4a82a' })));
+  g.append(grp({ id: 'rv-crew' },
+    mk('path', { d: 'M40 112 Q42 92 68 92 Q94 92 96 112 Z', fill: '#6a4a2f', stroke: ink, 'stroke-width': 2 }), cartoonFace('rv-ls', 68, 82, 'ls'),
+    mk('path', { d: 'M178 112 Q180 90 206 90 Q232 90 234 112 Z', fill: '#7a8aa0', stroke: ink, 'stroke-width': 2 }), cartoonFace('rv-barf', 206, 80, 'barf')));
+  g.append(mk('rect', { x: 0, y: 104, width: W, height: 46, rx: 12, fill: '#5b3a1e', stroke: '#eee', 'stroke-width': 3 }), mk('rect', { x: 6, y: 106, width: W - 12, height: 6, fill: '#7d5230' }),
+    mk('circle', { cx: 135, cy: 132, r: 17, fill: 'none', stroke: '#111', 'stroke-width': 5 }), mk('circle', { cx: 135, cy: 132, r: 5, fill: '#111' }), mk('path', { d: 'M118 132 H152 M135 132 V149', stroke: '#111', 'stroke-width': 3 }));
+  const bubble = grp({ id: 'rv-bubble' }, mk('rect', { x: 56, y: 24, width: 158, height: 30, rx: 15, fill: '#fff', stroke: ink, 'stroke-width': 2.5 }), mk('path', { d: 'M110 53 L118 70 L128 53 Z', fill: '#fff', stroke: ink, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }),
+    mk('path', { d: 'M111 53.5 H127', stroke: '#fff', 'stroke-width': 3.5 }),
+    mk('text', { x: 135, y: 44, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 900, fill: '#111', 'font-family': 'Arial Black, Impact, sans-serif' }, "He's gone plaid!?!"));
+  g.append(bubble);
+  return g;
+}
+
 // ---- Analog dials drawn inside the scene, far right (FR-036, FR-043) ----
 const DIAL = { cx: 620, cy: 262, r: 56 };
 const dpt = (t, rad) => { const a = Math.PI * (1 - t); return [(rad * Math.cos(a)).toFixed(2), (-rad * Math.sin(a)).toFixed(2)]; };
@@ -349,7 +400,8 @@ function stage(v) {
   const char = grp({ id: 'character' }, grp({ id: 'char-pos' }, grp({ id: 'char-squash' }, plug())));
   const streaks = grp({ id: 'streaks', opacity: 0 });
   for (let i = 0; i < 5; i++) streaks.append(mk('line', { x1: chX() - 150 - i * 20, y1: 90 + i * 22, x2: chX() - 40 - i * 8, y2: 90 + i * 22, stroke: '#fff', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0.7 }));
-  svg.append(clouds, far, near, ground, streaks, aim, tail, char, dials(config));
+  const plaidBg = grp({ id: 'plaid-bg', visibility: 'hidden' }, mk('rect', { x: -400, y: sc.h - 1800, width: 4000, height: 1800 + 200, fill: 'url(#plaid-pat)' }));
+  svg.append(plaidDefs(), clouds, far, near, plaidBg, ground, streaks, aim, tail, char, rvCabin(), dials(config));
 
   const hud = h('div', { class: 'stage-hud', 'aria-hidden': 'true' },
     h('div', { class: 'hud-tl' },
@@ -389,7 +441,7 @@ export function setSceneAnimation(on) {
 }
 const reducedMotion = () => !sceneAnimationOn();
 
-const vis = { bounceSeq: 0, boostSeq: 0, pickupSeq: 0, burst: null, emo: 'neutral', emoUntil: 0, glideT0: null, glideX0: 0 };
+const vis = { plaidOn: false, plaidT0: 0, bounceSeq: 0, boostSeq: 0, pickupSeq: 0, burst: null, emo: 'neutral', emoUntil: 0, glideT0: null, glideX0: 0 };
 const GLIDE_M_PER_S = 160; // cosmetic scroll speed in the victory glide (real speed would be a blur)
 const AIMING = ['briefing', 'aim-power', 'aim-angle', 'launching'];
 
@@ -448,6 +500,25 @@ function updateScene(v) {
     tower.setAttribute('visibility', x < -120 && !still ? 'hidden' : 'visible');
   } else tower.setAttribute('visibility', 'hidden');
 
+  // Plaid: a tartan background and the RV-cabin cutaway while the speed is at least 400 Gbps (FR-054).
+  const plaid = Boolean(s.plaid) && !glide;
+  for (const id of ['ly-clouds', 'ly-far', 'ly-near']) $(id).setAttribute('visibility', plaid ? 'hidden' : 'visible');
+  $('plaid-bg').setAttribute('visibility', plaid ? 'visible' : 'hidden');
+  if (plaid) {
+    if (!vis.plaidOn) { vis.plaidOn = true; vis.plaidT0 = now; }
+    const pat = document.getElementById('plaid-pat'); const sh = -((d * sc.pxPerM * 1.3) % PLAID_TILE); const key = still ? 0 : sh.toFixed(1);
+    if (pat.__k !== key) { pat.__k = key; pat.setAttribute('patternTransform', `translate(${key} 0)`); }
+    const rv = $('rv'); const portrait = view.h > sc.h; const scale = portrait ? 0.8 : 1;
+    const pop = still ? 1 : Math.min(1, (now - vis.plaidT0) / 260); const k = scale * (0.4 + 0.6 * pop);
+    const rx = view.w / 2 - (270 * scale) / 2; const ry = (portrait ? view.vy + 112 : 96);
+    rv.setAttribute('transform', `translate(${(rx + (270 * scale - 270 * k) / 2).toFixed(1)} ${(ry + (150 * scale - 150 * k) / 2).toFixed(1)}) scale(${k.toFixed(3)})`); rv.setAttribute('visibility', 'visible');
+    const t = still ? 0 : now;
+    const dart = Math.sin(t / 85) * 3.2; const gape = 3.5 + Math.abs(Math.sin(t / 130)) * 3;
+    for (const who of ['rv-ls', 'rv-barf']) { for (const sd of ['L', 'R']) { const pu = $(`${who}-pupil-${sd}`); pu.setAttribute('cx', (sd === 'L' ? (who === 'rv-ls' ? -7 : -9) : (who === 'rv-ls' ? 7 : 9)) + dart); } $(`${who}-mouth`).setAttribute('ry', gape.toFixed(1)); }
+    $('rv-crew').setAttribute('transform', `translate(0 ${(Math.sin(t / 45) * 0.9).toFixed(2)})`);
+    $('rv-streak').setAttribute('transform', `translate(${(10 + ((t / 230) % 1) * 250).toFixed(1)} 60)`);
+  } else { vis.plaidOn = false; $('rv').setAttribute('visibility', 'hidden'); }
+
   // Boost pickups: bobbing orbs; a burst ring marks a collection (FR-047).
   const picks = $('pickups');
   const usedP = new Set();
@@ -503,6 +574,7 @@ function updateScene(v) {
   let emotion = 'neutral';
   if (v.mood === 'celebrate') emotion = 'happy';
   else if (v.mood === 'mourn') emotion = 'sad';
+  else if (plaid) emotion = 'happy';
   else if (v.phase === 'launching') emotion = 'worried';
   else if (v.phase === 'aim-power' || v.phase === 'aim-angle') emotion = 'neutral';
   else if (now < vis.emoUntil) emotion = vis.emo;
@@ -512,7 +584,7 @@ function updateScene(v) {
   const spd = s.speedMps || 0;
   const lookX = spd > 1 ? (s.vx * Math.cos(s.th) + s.vy * Math.sin(s.th)) / spd : 0; const lookY = spd > 1 ? -(-s.vx * Math.sin(s.th) + s.vy * Math.cos(s.th)) / spd : 0;
   applyFace(emotion, still ? 0 : lookX, still ? 0 : lookY, !still && now % 3400 < 130);
-  const boosting = s.boostCooldownMs > 0 || glide || impacting;
+  const boosting = s.boostCooldownMs > 0 || glide || impacting || plaid;
   $('streaks').setAttribute('opacity', boosting && !still ? 1 : 0);
 
   // Aim arrow while choosing the angle and until the Catalyst arrives.
@@ -542,7 +614,7 @@ function stageSentence(v) {
     case 'aim-angle': return `Angle gauge moving: ${Math.round(a.angleDeg || 0)} degrees. Lock it with the Lock button.`;
     case 'launching': return a.relaunch ? 'Launching with your chosen power and angle.' : 'The angry Catalyst 6500 charges across the screen and rams the character.';
     case 'glide': return `Victory glide at ${formatSpeed(s.speedMps, v.config)}.`;
-    default: return `${fmtM(s.x)} travelled, ${s.bounces} device bounces${s.lastBounce ? `, last bounce ${s.lastBounce.q >= 0.6 ? 'solid' : s.lastBounce.q < 0.4 ? 'poor' : 'fair'}` : ''}, ${s.status === 'running' ? (s.grounded ? 'sliding on the road' : 'tumbling through the air') : 'stopped on the road after missing, looking sad'}.`;
+    default: if (s.plaid) return `${fmtM(s.x)} travelled at ${formatSpeed(s.speedMps, v.config)}: he's gone plaid! Lone Starr and Barf watch from the RV.`; return `${fmtM(s.x)} travelled, ${s.bounces} device bounces${s.lastBounce ? `, last bounce ${s.lastBounce.q >= 0.6 ? 'solid' : s.lastBounce.q < 0.4 ? 'poor' : 'fair'}` : ''}, ${s.status === 'running' ? (s.grounded ? 'sliding on the road' : 'tumbling through the air') : 'stopped on the road after missing, looking sad'}.`;
   }
 }
 
@@ -693,6 +765,7 @@ export function renderMain(root, v, ui) {
           h('dt', { text: 'Points' }), h('dd', { text: `${v.score} / ${v.roundCount}` }),
           h('dt', { text: 'Completed rounds' }), h('dd', { text: String(v.completedRoundIds.length) }),
           h('dt', { text: 'Valid attempts' }), h('dd', { text: String(v.attempts) }),
+          h('dt', { text: 'Plaid reached' }), h('dd', { text: v.sim.plaidSeq > 0 ? `Yes (${v.sim.plaidSeq}x), he's gone plaid!` : 'Not this time (400 Gbps needed)' }),
           h('dt', { text: 'Assistance used' }), h('dd', { text: `${a.assistBoosts} assisted boosts${a.assistedLaunch ? ', assisted launch' : ''}` })),
         h('p', { class: 'note', text: 'Completion is not proof of independent mastery: Assist is counted separately above.' }),
         h('div', { id: 'feedback', class: 'feedback', role: 'status', 'aria-live': 'polite' }),

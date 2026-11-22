@@ -55,7 +55,7 @@ test('Assist locks fixed good values and is recorded as assistance', () => {
   const v = g.view(); assert.equal(v.assistance.assistedLaunch, true); assert.equal(v.assistance.assistUsed, true);
 });
 test('a question appears when the character stops on the road, with no briefing screen first', () => {
-  const v = toQuestion(createGame(doc));
+  const v = toQuestion(createGame(rich()));
   assert.equal(v.phase, 'awaiting-answer'); assert.equal(v.round.id, 'q1'); assert.equal(v.sim.status, 'paused'); assert.ok(v.sim.misses >= 1);
 });
 test('a question screen has four lettered options and no hint or worked-solution API', () => {
@@ -64,13 +64,13 @@ test('a question screen has four lettered options and no hint or worked-solution
   const v = toQuestion(g); assert.equal(v.round.choices.length, 4); assert.ok(!('revealedHints' in v));
 });
 test('no selection: guidance shown, no attempt, no completion', () => {
-  const g = createGame(doc); toQuestion(g); g.submit(null);
+  const g = createGame(rich()); toQuestion(g); g.submit(null);
   const v = g.view();
   assert.equal(v.attempts, 0); assert.equal(v.score, 0); assert.equal(v.completedRoundIds.length, 0);
   assert.equal(v.lastResult.headline, 'Select an option'); assert.equal(v.phase, 'awaiting-answer');
 });
 test('wrong answer: one attempt, explains that option, round stays open, no points, no energy change', () => {
-  const g = createGame(doc); const v0 = toQuestion(g); const e0 = v0.sim.energy;
+  const g = createGame(rich()); const v0 = toQuestion(g); const e0 = v0.sim.energy;
   g.submit(wrongOf(v0.round));
   const v = g.view();
   assert.equal(v.attempts, 1); assert.equal(v.score, 0); assert.equal(v.phase, 'awaiting-answer'); assert.equal(v.sim.energy, e0);
@@ -78,7 +78,7 @@ test('wrong answer: one attempt, explains that option, round stays open, no poin
   assert.equal(v.lastResult.body, v0.round.choices.find((c) => c.id !== v0.round.rule.correctChoice).why);
 });
 test('retry works; correct completes once with +1 point and the power-up energy; repeated Submit changes nothing', () => {
-  const g = createGame(doc); const v0 = toQuestion(g); const e0 = v0.sim.energy;
+  const g = createGame(rich()); const v0 = toQuestion(g); const e0 = v0.sim.energy;
   g.submit(wrongOf(v0.round)); g.submit(key.q1);
   let v = g.view();
   assert.equal(v.phase, 'feedback'); assert.equal(v.score, 1); assert.equal(v.sim.energy, e0 + doc.config.powerUpEnergy); assert.equal(v.attempts, 2); assert.equal(v.mood, 'celebrate');
@@ -154,6 +154,7 @@ function playUntil(g, stopAt, { wrongLastChance = false } = {}) {
   }
   throw new Error('did not reach ' + stopAt);
 }
+const rich = () => { const d = clone(doc); d.config.initialEnergy = 1e6; return d; }; // enough energy that stops are ordinary questions
 const harsh = () => { const d = clone(doc); d.config.drainPerMeter = 1.5; return d; };
 
 test('last chance: with zero energy the stop asks a question; wrong ends the run, no retry', () => {

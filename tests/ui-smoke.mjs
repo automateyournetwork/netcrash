@@ -32,6 +32,7 @@ const hudRoot = mk('hud', 'header'); const mainRoot = mk('main', 'main'); const 
 const { createGame } = await import('../engine/state.js');
 const { mountGame } = await import('../ui/controls.js');
 const doc = JSON.parse(await readFile(new URL('../data/levels.json', import.meta.url), 'utf8'));
+doc.config.initialEnergy = 4000; // plenty of energy: stops are ordinary questions, not last chances (those are covered by the state tests)
 const game = createGame(doc);
 let confirmAnswer = false;
 mountGame({ game, hudRoot, mainRoot, liveRoot, confirmFn: () => confirmAnswer });
@@ -41,7 +42,7 @@ const byAction = (a) => { let f = null; mainRoot.walk((e) => { if (!f && e.attrs
 const click = (a) => { const el = byAction(a); if (!el) throw new Error(`no [${a}] on screen: ${mainRoot.textContent.slice(0, 120)}`); fire('click', el); };
 const pick = (value) => { let f = null; mainRoot.walk((e) => { if (e.tagName === 'INPUT' && e.attrs.name === 'choice' && e.value === String(value)) f = e; }); if (!f) throw new Error('no radio ' + value); fire('change', f); };
 const frames = (n, dt = 50) => { for (let i = 0; i < n; i++) { now += dt; const cb = rafCb; if (cb) cb(now); } };
-const until = (pred, max = 20000) => { for (let i = 0; i < max && !pred(); i++) frames(1); if (!pred()) throw new Error('condition not reached'); };
+const until = (pred, max = 20000) => { for (let i = 0; i < max && !pred(); i++) frames(1, 200); if (!pred()) throw new Error('condition not reached'); };
 const text = () => mainRoot.textContent;
 const fb = () => (document.getElementById('feedback') || { textContent: '' }).textContent;
 const hud = (id) => document.getElementById(id).textContent;
@@ -120,6 +121,16 @@ check('stage text has no null/undefined/NaN', !/null|undefined|NaN/.test(el('sta
 }
 click('boost'); frames(2);
 check('boost shows speed streaks while cooling down', el('streaks').getAttribute('opacity') === '1' || game.view().sim.grounded, el('streaks').getAttribute('opacity'));
+{ // Plaid (FR-054): forge a view at 400+ Gbps and check the tartan background, the RV cabin and the text equivalent
+  const { updateStage } = await import('../ui/render.js');
+  const v0 = game.view(); const forged = { ...v0, sim: { ...v0.sim, plaid: true, speedMps: 160 } };
+  updateStage(forged);
+  check('plaid: the tartan background and the RV cabin cutaway appear, the normal sky layers hide', vis('plaid-bg') && vis('rv') && el('ly-far').getAttribute('visibility') === 'hidden' && el('ly-clouds').getAttribute('visibility') === 'hidden');
+  check('plaid: the two cartoon characters and the speech bubble are in the cabin', ['rv-ls', 'rv-barf', 'rv-bubble', 'rv-ls-pupil-L', 'rv-barf-mouth', 'rv-streak'].every((i) => !!el(i)) && el('rv-bubble').textContent.includes("He's gone plaid!?!"));
+  check('plaid: announced in the text equivalent and the plug is happy', /gone plaid/.test(el('stage-text').textContent) && el('mouth').getAttribute('d').startsWith('M-6 6.5'), el('stage-text').textContent);
+  updateStage(v0);
+  check('plaid: back to the normal sky when the speed drops', !vis('plaid-bg') && !vis('rv') && el('ly-far').getAttribute('visibility') === 'visible');
+}
 
 // --- First question: only the question and four lettered options ---
 until(() => phase() === 'awaiting-answer', 60000);

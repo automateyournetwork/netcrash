@@ -1,5 +1,5 @@
 import { test, assert, loadDoc, clone } from './harness.js';
-import { createSim, step, launch, ackQuestion, onCorrectAnswer, resume, startGlide, formatSpeed, inGoodWindow, boostQuality, gaugeValue, powerFromGauge, angleFromGauge, buildDevices } from '../engine/sim.js';
+import { createSim, step, launch, speedGbps, ackQuestion, onCorrectAnswer, resume, startGlide, formatSpeed, inGoodWindow, boostQuality, gaugeValue, powerFromGauge, angleFromGauge, buildDevices } from '../engine/sim.js';
 import { createGame } from '../engine/state.js';
 
 const doc = await loadDoc();
@@ -49,9 +49,9 @@ test('gravity: vy falls by g per second and the apex matches y0 + vy^2 / 2g', ()
   near(top, y0 + (vy0 * vy0) / (2 * cfg.physics.gravity), 'apex', 1);
 });
 test('a steeper angle goes higher, more power goes farther', () => {
-  const peak = (pw, a) => { let s = launch(createSim(cfg), pw, a); let t = 0; for (let i = 0; i < 300 && !s.grounded && s.roadBounces === 0; i++) { s = step(s, {}, noDevices, 50); t = Math.max(t, s.y); } return t; };
+  const peak = (pw, a) => { let s = launch(createSim(noDevices), pw, a); let t = 0; for (let i = 0; i < 300 && !s.grounded && s.roadBounces === 0; i++) { s = step(s, {}, noDevices, 50); t = Math.max(t, s.y); } return t; };
   assert.ok(peak(50, 70) > peak(50, 30));
-  const range = (pw) => { let s = launch(createSim(cfg), pw, 45); for (let i = 0; i < 400 && s.roadBounces === 0 && !s.grounded; i++) s = step(s, {}, noDevices, 50); return s.x; };
+  const range = (pw) => { let s = launch(createSim(noDevices), pw, 45); for (let i = 0; i < 400 && s.roadBounces === 0 && !s.grounded; i++) s = step(s, {}, noDevices, 50); return s.x; };
   assert.ok(range(60) > range(40));
 });
 test('spin carries on in the air and the orientation follows it', () => {
@@ -62,7 +62,7 @@ test('spin carries on in the air and the orientation follows it', () => {
 test('energy drains per meter travelled and never goes below zero', () => {
   let s = launch(createSim(cfg), 50, 45); const e0 = s.energy;
   s = step(s, {}, noDevices, 50); near(e0 - s.energy, s.x * cfg.drainPerMeter, 'drain', 1e-6);
-  s = { ...launch(createSim(cfg), 50, 45), energy: 0.01 }; s = run(s, 5, {}, noDevices); assert.equal(s.energy, 0);
+  s = { ...launch(createSim(noDevices), 50, 45), energy: 0.01 }; s = run(s, 5, {}, noDevices); assert.equal(s.energy, 0);
 });
 test('a flat landing on a device is a high-quality bounce; a tilted landing is a lower-quality one that adds spin', () => {
   const flat = bounceOf(falling(0)); const tilt = bounceOf(falling(-0.35));
@@ -105,7 +105,7 @@ test('the Cat6 tail is a rope: fixed segment length, never through the road, swi
   const a = { x: s.x - cfg.physics.bodyHalfW * Math.cos(s.th), y: s.y - cfg.physics.bodyHalfW * Math.sin(s.th) };
   near(Math.hypot(s.tail[0].x - a.x, s.tail[0].y - a.y), cfg.tail.segM, 'first segment', 0.6);
   for (let i = 1; i < s.tail.length; i++) near(Math.hypot(s.tail[i].x - s.tail[i - 1].x, s.tail[i].y - s.tail[i - 1].y), cfg.tail.segM, `segment ${i}`, 0.6);
-  const slow = run(launch(createSim(cfg), 50, 50, 0), 12, {}, noDevices); const fast = run(launch(createSim(cfg), 50, 50, 4), 12, {}, noDevices);
+  const slow = run(launch(createSim(noDevices), 50, 50, 0), 12, {}, noDevices); const fast = run(launch(createSim(noDevices), 50, 50, 4), 12, {}, noDevices);
   assert.ok(Math.abs(slow.tail[3].y - fast.tail[3].y) > 1 || Math.abs(slow.tail[3].x - fast.tail[3].x) > 1, 'spin changes how the tail swings');
 });
 test('air boost grows with timing quality; assist is the maximum; ignored on the ground; cooldown applies', () => {
@@ -134,28 +134,58 @@ test('glide uses glide speed and glide drain, plus the super boost', () => {
   const t = step(s, {}, cfg, 50);
   near(t.x, 100000 * 0.05); near(s.energy - t.energy, 5000 * 0.0005); assert.equal(t.status, 'running');
 });
-test('formatSpeed shows Mbps, Gbps, Tbps', () => {
-  assert.equal(formatSpeed(20, cfg), '200 Mbps'); assert.equal(formatSpeed(55, cfg), '550 Mbps'); assert.equal(formatSpeed(230, cfg), '2.3 Gbps'); assert.equal(formatSpeed(100000, cfg), '1 Tbps');
+test('formatSpeed shows Mbps, Gbps, Tbps and 150 m/s is exactly 400 Gbps', () => {
+  assert.equal(formatSpeed(150, cfg), '400 Gbps'); assert.equal(formatSpeed(0.03, cfg), '80 Mbps');
+  assert.equal(formatSpeed(300, cfg), '800 Gbps'); assert.equal(formatSpeed(1000, cfg), '2.7 Tbps'); assert.equal(formatSpeed(20, cfg), '53.3 Gbps');
+  near(speedGbps(150, cfg), 400, 'Gbps', 1e-6);
 });
 test('simulation is deterministic, tail included', () => {
   assert.deepEqual(run(launch(createSim(cfg), 55, 45, 2), 300), run(launch(createSim(cfg), 55, 45, 2), 300));
 });
 
-test('devices are solid: flying low into the side of one rebounds the character and never passes through (FR-044)', () => {
-  const d = dev0; const A = cfg.physics.bodyHalfW; const L = d.x - d.boxHalf;
+test('devices are solid but never send you backwards: a side hit vaults you up and over with MORE forward speed (FR-044)', () => {
+  const d = dev0; const dv = cfg.devices;
   let s = { ...launch(createSim(cfg), 30, 45), x: d.x - 70, y: 22, th: 0, w: 0, vx: 40, vy: 0 };
-  let maxX = -1e9; let sideSeen = false; const e0 = s.energy;
-  for (let i = 0; i < 40; i++) { s = step(s, {}, cfg, 50); maxX = Math.max(maxX, s.x + A); if (s.bounceEvent === 'side') sideSeen = true; }
-  assert.ok(sideSeen, 'a side impact was detected'); assert.ok(maxX < L + 6, `never inside the device: ${maxX} vs ${L}`);
-  assert.equal(s.bounces, 0, 'a side hit is not a rewarding bounce'); assert.ok(s.energy < e0, 'no energy gained from a side hit');
-  assert.ok(s.sideHits >= 1 && s.lastBounce && s.lastBounce.side && s.lastBounce.q < 0.4);
+  let minVx = 1e9; let sideSeen = false; let topY = 0; const e0 = s.energy;
+  for (let i = 0; i < 80; i++) { s = step(s, {}, cfg, 50); minVx = Math.min(minVx, s.vx); topY = Math.max(topY, s.y); if (s.bounceEvent === 'side') sideSeen = true; }
+  assert.ok(sideSeen, 'a side impact was detected'); assert.ok(minVx >= 39.9, `never slower than before: ${minVx}`);
+  assert.ok(s.x > d.x + d.boxHalf, `carried on past the device: ${s.x}`); assert.ok(topY > d.top, 'went over the top');
+  assert.equal(s.bounces, 0, 'a vault is not a rewarding top bounce'); assert.ok(s.sideHits >= 1 && s.lastBounce.side);
 });
-test('sliding on the road into a device rebounds backwards', () => {
-  const d = dev0; const A = cfg.physics.bodyHalfW; const L = d.x - d.boxHalf;
+test('a vault ADDS forward momentum once per device (not every substep)', () => {
+  const d = dev0; const dv = cfg.devices;
+  let s = { ...launch(createSim(cfg), 30, 45), x: d.x - 70, y: 22, th: 0, w: 0, vx: 40, vy: 0 };
+  const seen = [];
+  for (let i = 0; i < 40; i++) { const before = s.vx; s = step(s, {}, cfg, 50); if (s.bounceEvent === 'side') seen.push(s.vx - before); }
+  assert.equal(seen.length, 1, `one vault boost, got ${seen.length}`); assert.ok(seen[0] >= dv.vaultBoostMps - 1, `gain ${seen[0]}`);
+});
+test('sliding on the road into a device vaults over it going forward (never backwards)', () => {
+  const d = dev0;
   let s = { ...launch(createSim(cfg), 30, 45), x: d.x - 70, y: cfg.physics.bodyHalfH, th: 0, w: 0, vx: 30, vy: 0, grounded: true };
-  let maxX = -1e9; let backwards = false;
-  for (let i = 0; i < 30; i++) { s = step(s, {}, cfg, 50); maxX = Math.max(maxX, s.x + A); if (s.vx < 0) backwards = true; }
-  assert.ok(maxX < L + 6, `not through the device: ${maxX} vs ${L}`); assert.ok(backwards, 'rebounded backwards');
+  let minVx = 1e9;
+  for (let i = 0; i < 120; i++) { s = step(s, {}, cfg, 50); minVx = Math.min(minVx, s.vx); }
+  assert.ok(minVx >= 0, `never backwards: ${minVx}`); assert.ok(s.x > d.x, `ended up past the device: ${s.x}`);
+});
+test('momentum is additive on a top bounce: forward speed is at least what it was plus a quality-scaled gain', () => {
+  const s0 = falling(0, 25, -25); const t = bounceOf(s0);
+  assert.ok(t.vx >= 25 + cfg.devices.padAddVx * t.lastBounce.q - 1e-6, `vx ${t.vx} q ${t.lastBounce.q}`);
+  const poor = bounceOf(falling(-0.35, 25, -25)); assert.ok(poor.vx >= 25, `even a poor bounce never loses forward speed: ${poor.vx}`);
+});
+test('fuzz: no launch, angle or contact ever drives forward speed negative while flying (no backward bounces)', () => {
+  let worst = 1e9;
+  for (const g of [0.3, 0.6, 1]) for (const a of [8, 20, 35, 50, 62]) {
+    let s = launch(createSim(cfg), cfg.physics.powerMinMps + (cfg.physics.powerMaxMps - cfg.physics.powerMinMps) * g, a, 2, cfg.launch.liftM);
+    for (let i = 0; i < 700 && s.status === 'running'; i++) { s = step(s, {}, cfg, 50); worst = Math.min(worst, s.vx); }
+  }
+  assert.ok(worst >= -1e-9, `most negative vx ${worst}`);
+});
+test('plaid: the flag switches on at 400 Gbps (150 m/s), stays on above 340 Gbps (127.5 m/s), off below, and counts entries', () => {
+  const air = { ...launch(createSim(noDevices), 60, 20), y: 500 };
+  let s = { ...air, vx: 149, vy: 0, speedMps: 149 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, false);
+  s = { ...air, vx: 151, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, true); assert.equal(s.plaidSeq, 1);
+  s = { ...s, vx: 135, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, true, 'hysteresis keeps it on');
+  s = { ...s, vx: 120, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, false); assert.equal(s.plaidSeq, 1);
+  s = { ...s, vx: 155, vy: 0 }; s = step(s, {}, noDevices, 50); assert.equal(s.plaid, true); assert.equal(s.plaidSeq, 2, 'a second entry is counted');
 });
 test('a wedged character is shaken loose to a clear spot after a second', () => {
   const stuck = { ...launch(createSim(cfg), 30, 45), x: 330, y: 60, th: 1, w: 0, vx: 0, vy: 0, stuckMs: 960 };
@@ -200,7 +230,7 @@ test('boost pickups are deterministic, flying into one collects it (+1, capped),
   let t = { ...launch(createSim(cfg), 40, 20), x: k.x - 20, y: k.y, vx: 30, vy: 0, boosts: cfg.boost.maxCount };
   t = run(t, 3, {}, noDevices); assert.equal(t.boosts, cfg.boost.maxCount, 'capped');
   let u = { ...s, x: k.x - 20, y: k.y, vx: 30, vy: 0, grounded: false }; u = run(u, 3, {}, noDevices); assert.equal(u.pickupSeq, 1, 'not collected twice');
-  const far = run({ ...launch(createSim(cfg), 40, 20), x: k.x - 20, y: k.y + 150, vx: 30, vy: 0 }, 3, {}, noDevices); assert.equal(far.pickupSeq, 0, 'missed by height');
+  const far = run({ ...launch(createSim(noDevices), 40, 20), x: k.x - 20, y: k.y + 150, vx: 30, vy: 0 }, 3, {}, noDevices); assert.equal(far.pickupSeq, 0, 'missed by height');
 });
 test('out of energy: horizontal speed bleeds away so the character comes down instead of floating on', () => {
   const air = { ...launch(createSim(cfg), 60, 35), y: 300, energy: 0 };

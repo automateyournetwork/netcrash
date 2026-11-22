@@ -2,14 +2,14 @@
   "schemaVersion": 2,
   "config": {
     "initialEnergy": 140,
-    "drainPerMeter": 0.07,
+    "drainPerMeter": 0.14,
     "powerUpEnergy": 60,
     "superBoostEnergy": 300,
     "glide": {
       "speedMps": 100000,
       "drainPerMeter": 0.0005
     },
-    "displayBitsPerMps": 10000000,
+    "displayBitsPerMps": 2666666667,
     "boost": {
       "cooldownMs": 1200,
       "sweepMs": 2000,
@@ -57,7 +57,7 @@
       "count": 60,
       "firstX": 150,
       "gapStartM": 50,
-      "gapGrowM": 8,
+      "gapGrowM": 16,
       "energy": 140,
       "energyMinFrac": 0.2,
       "padKickMps": 34,
@@ -120,11 +120,16 @@
         }
       ],
       "padSpeedGain": 0.3,
-      "sideRestitution": 0.55,
-      "sideMu": 0.3,
       "poleHalfM": 2.5,
       "padAngleDeg": 32,
-      "padAimBlend": 0.9
+      "padAimBlend": 0.9,
+      "padAddVx": 8,
+      "vaultBoostMps": 6,
+      "vaultMinMps": 10,
+      "vaultClearM": 8,
+      "vaultMaxVy": 70,
+      "vaultCoolMs": 1200,
+      "vaultClimbMul": 1.2
     },
     "relaunch": {
       "mps": 62,
@@ -138,8 +143,8 @@
       "minVy": 3,
       "maxVy": 16,
       "optimalAngleDeg": 35,
-      "perfectMinMps": 112,
-      "perfectGainMps": 40,
+      "perfectMinMps": 100,
+      "perfectGainMps": 30,
       "perfectSpinKeep": 0.25
     },
     "tail": {
@@ -163,6 +168,10 @@
         84,
         32
       ]
+    },
+    "plaid": {
+      "thresholdGbps": 400,
+      "exitGbps": 340
     }
   },
   "sources": [
